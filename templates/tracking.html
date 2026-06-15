@@ -69,14 +69,15 @@ header::before{
 }
 @keyframes ticker{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
 
-.logo-section{display:flex;align-items:center;gap:14px;z-index:2;}
-.logo-badge{background:#fff;padding:5px 12px;border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 1px rgba(255,255,255,.15),0 8px 22px rgba(0,0,0,.5),0 0 20px rgba(255,107,0,.18);}
-.pos-logo-img{height:36px;display:block;}
-.brand-title h1{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#fff;}
-.brand-title p{font-size:10px;color:var(--orange-lt);font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-top:2px;}
+.logo-section{display:flex;align-items:center;gap:10px;z-index:2;min-width:0;flex-shrink:1;}
+.logo-badge{background:#fff;padding:5px 10px;border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 1px rgba(255,255,255,.15),0 8px 22px rgba(0,0,0,.5),0 0 20px rgba(255,107,0,.18);flex-shrink:0;}
+.pos-logo-img{height:32px;display:block;}
+.brand-title{min-width:0;}
+.brand-title h1{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;color:#fff;white-space:nowrap;}
+.brand-title p{font-size:9px;color:var(--orange-lt);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-top:2px;white-space:nowrap;}
 
-.header-right{display:flex;align-items:center;gap:12px;z-index:2;}
-#digital-clock{color:var(--text-mut)!important;font-family:'JetBrains Mono',monospace!important;font-size:14px!important;font-weight:700!important;}
+.header-right{display:flex;align-items:center;gap:8px;z-index:2;flex-shrink:0;}
+#digital-clock{color:var(--text-mut)!important;font-family:'JetBrains Mono',monospace!important;font-size:13px!important;font-weight:700!important;}
 
 .pkg-live-badge{
     display:flex;align-items:center;gap:8px;
@@ -97,14 +98,19 @@ header::before{
 .main-container{display:flex;flex:1;position:relative;height:calc(100vh - 72px);overflow:hidden;z-index:1;}
 #map{flex:1;height:100%;width:100%;background:#0A0704;}
 
-/* ─── SIDE PANEL ─── */
+/* ─── SIDE PANEL — Responsive di semua zoom level ─── */
 #panel{
-    width:400px;height:100%;
+    width:400px;
+    min-width:300px;
+    max-width:480px;
+    height:100%;
     background:var(--panel);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
     border-left:1px solid var(--border);
-    padding:20px;overflow-y:auto;z-index:999;
+    padding:16px;
+    overflow-y:auto;overflow-x:hidden;
+    z-index:999;
     box-shadow:-18px 0 50px rgba(0,0,0,.6),1px 0 0 rgba(255,154,77,.12) inset;
-    display:flex;flex-direction:column;gap:14px;
+    display:flex;flex-direction:column;gap:12px;
     transition:transform .4s cubic-bezier(.25,1,.5,1);
     position:relative;flex-shrink:0;
 }
@@ -125,30 +131,68 @@ header::before{
 .panel-closed .toggle-btn{right:0;border-right:1px solid var(--border);}
 .toggle-btn svg{transition:transform .4s;}
 .panel-closed .toggle-btn svg{transform:rotate(180deg);}
-#panel::-webkit-scrollbar{width:5px;}
+#panel::-webkit-scrollbar{width:4px;}
 #panel::-webkit-scrollbar-thumb{background:rgba(255,107,0,.3);border-radius:3px;}
+
+/* Responsive cards */
+.card{min-width:0;word-break:break-word;}
+.label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.value{word-break:break-word;overflow-wrap:anywhere;}
+
+/* Tabel detail responsive */
+.detail-table td:last-child{
+    font-weight:700;text-align:right;color:#fff;
+    padding-left:8px;word-break:break-word;overflow-wrap:anywhere;
+    max-width:160px;
+}
+
+/* Nav grid responsive */
+.nav-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.btn-nav{padding:8px 10px;font-size:10px;gap:5px;}
+
+/* Alert boxes */
+.alert-box{padding:9px 12px;font-size:11px;}
+
+/* Speed number responsive */
+.speed-num{font-size:30px!important;}
+
+/* Section title compact */
+.section-title{font-size:10px;letter-spacing:1px;margin-top:2px;}
 
 /* ─── SECTION TITLES ─── */
 .section-title{
-    font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;
-    text-transform:uppercase;color:var(--orange-lt);display:flex;align-items:center;gap:8px;margin-top:4px;
+    font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.2px;
+    text-transform:uppercase;color:var(--orange-lt);display:flex;align-items:center;gap:8px;margin-top:2px;
+    flex-shrink:0;min-width:0;
 }
-.section-title::before{content:'';width:14px;height:2px;background:var(--orange);border-radius:2px;box-shadow:0 0 8px var(--orange);}
-.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+.section-title::before{content:'';width:12px;height:2px;flex-shrink:0;background:var(--orange);border-radius:2px;box-shadow:0 0 8px var(--orange);}
+.section-title::after{content:'';flex:1;height:1px;min-width:0;background:linear-gradient(90deg,var(--border),transparent);}
 
 /* ─── CARDS ─── */
 .card{
     background:var(--card-grad);border:1px solid var(--border);border-top:1px solid var(--border-lit);
-    padding:14px 18px;border-radius:14px;box-shadow:var(--depth);
-    display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;
+    padding:12px 16px;
+    border-radius:12px;box-shadow:var(--depth);
+    display:flex;flex-direction:column;gap:5px;
+    position:relative;overflow:hidden;
+    min-width:0;flex-shrink:0;
 }
-.card::after{content:'';position:absolute;top:0;left:0;right:0;height:40%;border-radius:14px 14px 0 0;background:linear-gradient(180deg,rgba(255,255,255,.04),transparent);pointer-events:none;}
-.card>*{position:relative;z-index:1;}
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:40%;border-radius:12px 12px 0 0;background:linear-gradient(180deg,rgba(255,255,255,.04),transparent);pointer-events:none;}
+.card>*{position:relative;z-index:1;min-width:0;}
 
-.label{font-size:10px;color:var(--text-mut);text-transform:uppercase;font-weight:800;letter-spacing:1px;margin-bottom:1px;}
-.value{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#fff;line-height:1.3;word-break:break-word;}
+.label{
+    font-size:10px;color:var(--text-mut);text-transform:uppercase;
+    font-weight:800;letter-spacing:.8px;margin-bottom:1px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.value{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:18px;
+    font-weight:700;color:#fff;line-height:1.3;
+    word-break:break-word;overflow-wrap:anywhere;
+}
 .value-glow{color:var(--orange-lt);text-shadow:0 0 14px var(--glow);}
-.value-sm{font-size:13px!important;font-weight:600!important;}
+.value-sm{font-size:12px!important;font-weight:600!important;}
 
 /* Package banner */
 .pkg-banner{
@@ -186,14 +230,24 @@ header::before{
 @keyframes pingWave{100%{transform:scale(2.4);opacity:0;}}
 
 /* Detail table */
-.detail-table{width:100%;border-collapse:collapse;}
-.detail-table td{padding:8px 0;border-bottom:1px solid rgba(255,154,77,.07);font-size:12px;color:#E9DECF;vertical-align:top;}
+.detail-table{width:100%;border-collapse:collapse;table-layout:fixed;}
+.detail-table td{
+    padding:7px 0;border-bottom:1px solid rgba(255,154,77,.07);
+    font-size:11px;color:#E9DECF;vertical-align:top;
+    word-break:break-word;overflow-wrap:anywhere;
+}
 .detail-table tr:last-child td{border-bottom:none;}
-.detail-table td:first-child{color:var(--text-mut);font-weight:500;width:45%;}
-.detail-table td:last-child{font-weight:700;text-align:right;color:#fff;padding-left:10px;word-break:break-word;}
+.detail-table td:first-child{color:var(--text-mut);font-weight:500;width:44%;padding-right:6px;}
+.detail-table td:last-child{font-weight:700;text-align:right;color:#fff;padding-left:6px;}
 
 /* Alert boxes */
-.alert-box{padding:11px 13px;border-radius:9px;font-size:12px;font-weight:700;display:flex;flex-direction:column;gap:2px;border:1px solid transparent;box-shadow:0 4px 14px rgba(0,0,0,.25);}
+.alert-box{
+    padding:9px 12px;border-radius:9px;
+    font-size:11px;font-weight:700;
+    display:flex;flex-direction:column;gap:2px;
+    border:1px solid transparent;box-shadow:0 4px 14px rgba(0,0,0,.25);
+    word-break:break-word;
+}
 .alert-danger{background:var(--danger-bg);border-color:rgba(255,90,77,.3);color:#FF8B82;}
 .alert-success{background:var(--success-bg);border-color:rgba(52,211,153,.28);color:var(--success);}
 
@@ -491,9 +545,10 @@ header::before{
         <div class="alert-box alert-success"><span>✅ Segel enclosure terkunci otentik</span></div>
         {% endif %}
 
-        <!-- BUKTI VISUAL -->
-        <div class="section-title">Bukti Kondisi Paket</div>
+        <!-- BUKTI VISUAL REAL-TIME -->
+        <div class="section-title">Dokumentasi Visual Paket</div>
 
+        <!-- Banner info foto -->
         {% if photos %}
         <div id="evidence-banner" class="alert-box alert-danger">
             <span>📸 {{ photos|length }} foto kondisi terkirim</span>
@@ -503,20 +558,63 @@ header::before{
         <div id="evidence-banner" class="alert-box alert-danger" style="display:none;"></div>
         {% endif %}
 
+        <!-- Foto terbaru (besar, utama) -->
+        {% if photos %}
+        <div id="evidence-latest">
+        {% else %}
+        <div id="evidence-latest" style="display:none;">
+        {% endif %}
+            <div style="position:relative;border-radius:12px;overflow:hidden;border:2px solid rgba(255,107,0,.4);box-shadow:0 8px 24px rgba(0,0,0,.5);">
+                {% if photos %}
+                <img id="evidence-main-img" src="{{ photos[-1] }}" alt="Foto terbaru"
+                     style="width:100%;height:180px;object-fit:cover;display:block;">
+                {% else %}
+                <img id="evidence-main-img" src="" alt="Foto terbaru"
+                     style="width:100%;height:180px;object-fit:cover;display:none;">
+                {% endif %}
+                <div style="position:absolute;top:8px;left:8px;background:rgba(255,107,0,.9);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;letter-spacing:.5px;">
+                    📸 LIVE
+                </div>
+                <div id="evidence-main-time" style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;font-family:'JetBrains Mono',monospace;">
+                    —
+                </div>
+            </div>
+        </div>
+
+        <!-- Grid semua foto -->
+        {% if photos %}
         <div class="photo-grid" id="evidence-grid">
+        {% else %}
+        <div class="photo-grid" id="evidence-grid" style="display:none;">
+        {% endif %}
             {% for photo in photos %}
-            <img src="{{ photo }}" alt="Bukti kondisi {{ loop.index }}">
+            <img src="{{ photo }}" alt="Bukti kondisi {{ loop.index }}"
+                 onclick="showFullscreen(this.src)" style="cursor:zoom-in;">
             {% endfor %}
         </div>
 
+        <!-- State kosong -->
         {% if photos %}
         <div id="evidence-empty" class="card evidence-empty" style="display:none;">
         {% else %}
         <div id="evidence-empty" class="card evidence-empty">
         {% endif %}
-            <span style="font-size:24px;">📷</span>
-            <span style="font-size:12px;color:var(--text-mut);font-weight:600;">Belum ada foto kondisi</span>
-            <span style="font-size:11px;color:var(--text-faint);text-align:center;line-height:1.5;">Foto otomatis dikirim saat sensor benturan atau pembukaan paksa terpicu.</span>
+            <span style="font-size:32px;opacity:.4;">📷</span>
+            <span style="font-size:12px;color:var(--text-mut);font-weight:700;">Menunggu Foto dari Kamera IoT</span>
+            <span style="font-size:11px;color:var(--text-faint);text-align:center;line-height:1.6;max-width:200px;">
+                Foto otomatis terkirim saat kamera mendeteksi<br>benturan atau pembukaan paksa
+            </span>
+        </div>
+
+        <!-- Fullscreen overlay -->
+        <div id="fullscreen-overlay" onclick="closeFullscreen()"
+             style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);
+                    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+                    cursor:zoom-out;align-items:center;justify-content:center;">
+            <img id="fullscreen-img" src="" alt="Foto penuh"
+                 style="max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.8);">
+            <div style="position:fixed;top:20px;right:20px;color:#fff;font-size:24px;cursor:pointer;"
+                 onclick="closeFullscreen()">✕</div>
         </div>
 
     </div><!-- end #panel -->
@@ -647,7 +745,12 @@ socket.on('ui_refresh', data=>{
     document.getElementById('ui-id').innerText     = _v(data.device_id, '—');
     document.getElementById('ui-status').innerText = status;
     document.getElementById('ui-speed').innerText  = _v(data.speed, '0');
-    document.getElementById('ui-status').style.color = status.includes('ONLINE') ? '#34D399' : '#FF5A4D';
+    // Warna status: ONLINE=hijau, DEEP SLEEP=biru, OFFLINE=merah
+    let statusColor = '#FF5A4D';  // default merah
+    if(status.includes('ONLINE'))          statusColor = '#34D399';  // hijau
+    else if(status.includes('DEEP SLEEP')) statusColor = '#3B82F6';  // biru
+    else if(status.includes('MENCARI'))    statusColor = '#F59E0B';  // kuning
+    document.getElementById('ui-status').style.color = statusColor;
 
     // Update koordinat GPS real-time
     const latEl  = document.getElementById('ui-coord-lat');
@@ -719,17 +822,71 @@ socket.on('evidence_update', data=>{
     const grid    = document.getElementById('evidence-grid');
     const empty   = document.getElementById('evidence-empty');
     const banner  = document.getElementById('evidence-banner');
+    const latest  = document.getElementById('evidence-latest');
+    const mainImg = document.getElementById('evidence-main-img');
+    const mainTime= document.getElementById('evidence-main-time');
 
-    if(grid) grid.innerHTML = photos.map((p,i)=>`<img src="${p}?t=${cb}" alt="Bukti ${i+1}">`).join('');
-    if(empty)  empty.style.display  = photos.length ? 'none' : 'flex';
-    if(banner){
-        if(photos.length){
+    if(photos.length > 0){
+        // Update foto utama (terbaru)
+        if(mainImg){
+            mainImg.src   = photos[photos.length - 1] + '?t=' + cb;
+            mainImg.style.display = 'block';
+        }
+        if(mainTime) mainTime.innerText = data.time || '—';
+        if(latest)   latest.style.display = 'block';
+
+        // Update grid semua foto (thumbnail)
+        if(grid){
+            grid.style.display = 'grid';
+            grid.innerHTML = photos.map((p,i)=>
+                `<img src="${p}?t=${cb}" alt="Bukti ${i+1}"
+                      onclick="showFullscreen('${p}?t=${cb}')"
+                      style="cursor:zoom-in;">`
+            ).join('');
+        }
+
+        // Banner info
+        if(banner){
             banner.style.display = 'flex';
-            banner.innerHTML = `<span>📸 ${data.count||photos.length} foto kondisi terkirim</span>
-                <span style="font-size:10px;font-weight:500;">Pemicu: ${data.trigger||'event'} • ${data.time||'-'}</span>`;
-        } else { banner.style.display='none'; }
+            banner.innerHTML = `
+                <span>📸 ${data.count||photos.length} foto kondisi paket terdokumentasi</span>
+                <span style="font-size:10px;font-weight:500;">
+                    Pemicu: <b>${data.trigger||'Kamera'}</b> • ${data.time||'-'}
+                </span>`;
+        }
+
+        if(empty) empty.style.display = 'none';
+
+        // Notifikasi flash pada foto baru
+        if(mainImg){
+            mainImg.style.outline = '3px solid var(--orange)';
+            setTimeout(()=>{ mainImg.style.outline = 'none'; }, 1500);
+        }
+
+    } else {
+        // Reset ke state kosong
+        if(latest)   latest.style.display = 'none';
+        if(grid)   { grid.style.display = 'none'; grid.innerHTML = ''; }
+        if(banner)   banner.style.display = 'none';
+        if(empty)    empty.style.display = 'flex';
     }
 });
+
+// ── Fullscreen foto ──
+function showFullscreen(src){
+    const overlay = document.getElementById('fullscreen-overlay');
+    const img     = document.getElementById('fullscreen-img');
+    if(overlay && img){
+        img.src = src;
+        overlay.style.display = 'flex';
+    }
+}
+function closeFullscreen(){
+    const overlay = document.getElementById('fullscreen-overlay');
+    if(overlay) overlay.style.display = 'none';
+}
+// Tutup fullscreen dengan tombol ESC
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeFullscreen(); });
 
 // ─── Radar animation ───
 function animateRadar(){

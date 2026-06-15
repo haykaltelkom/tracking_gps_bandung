@@ -491,39 +491,90 @@ select option{background:#15100A;color:#fff;}
             </button>
         </div>
 
-        <!-- TELEMETRI CARDS -->
-        <div class="card">
-            <div class="label">ID Node Perangkat</div>
-            <div class="value value-glow" id="ui-id" style="font-family:'JetBrains Mono',monospace;">{{ current_telemetry.device_id if current_telemetry else 'NODE-HV-PENDING' }}</div>
-        </div>
-        <div class="card">
-            <div class="label">Status Koneksi</div>
-            <div class="value" id="ui-status" style="color:var(--danger);font-size:18px;">{{ current_telemetry.status if current_telemetry else 'OFFLINE' }}</div>
-        </div>
-        <div class="card">
-            <div class="label">Telemetri Kecepatan</div>
-            <div class="value">
-                <span id="ui-speed" class="value-glow" style="font-size:26px;">0</span>
-                <span style="font-size:13px;color:var(--text-mut);font-weight:500;">km/jam</span>
+        <!-- TELEMETRI CARDS — GPS REAL-TIME -->
+
+        <!-- Status + ID dalam satu kartu besar -->
+        <div class="card" style="border-color:rgba(255,107,0,.35);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                <div style="flex:1;">
+                    <div class="label">Status Alat</div>
+                    <div id="ui-status" style="font-size:13px;font-weight:800;color:var(--danger);margin-top:4px;line-height:1.4;">
+                        {{ current_telemetry.status if current_telemetry else 'OFFLINE' }}
+                    </div>
+                </div>
+                <div id="gps-pulse-ring" style="width:14px;height:14px;border-radius:50%;background:var(--danger);box-shadow:0 0 10px var(--danger);flex-shrink:0;margin-top:2px;transition:background .4s,box-shadow .4s;"></div>
+            </div>
+            <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,107,0,.1);">
+                <div class="label">ID Node</div>
+                <div id="ui-id" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--orange-lt);margin-top:3px;word-break:break-all;">
+                    {{ current_telemetry.device_id if current_telemetry else 'NODE-HV-PENDING' }}
+                </div>
             </div>
         </div>
-        <div class="card" id="card-koordinat">
-            <div class="label">Koordinat GPS Paket</div>
-            <div style="display:flex;flex-direction:column;gap:6px;margin-top:2px;">
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:10px;color:var(--text-faint);font-weight:700;width:26px;flex-shrink:0;">LAT</span>
-                    <span id="ui-coord-lat" style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--orange-lt);letter-spacing:.5px;">—</span>
+
+        <!-- Kartu GPS Koordinat Real-Time (utama) -->
+        <div class="card" id="card-koordinat" style="border-color:rgba(255,107,0,.3);position:relative;overflow:hidden;">
+            <!-- Header kartu -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <div class="label" style="margin-bottom:0;">Pelacakan GPS Real-Time</div>
+                <div id="gps-status-chip" style="font-size:9px;font-weight:800;padding:3px 8px;border-radius:12px;background:rgba(255,90,77,.15);color:var(--danger);border:1px solid rgba(255,90,77,.3);letter-spacing:.5px;text-transform:uppercase;">
+                    Mencoba Menangkap
                 </div>
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:10px;color:var(--text-faint);font-weight:700;width:26px;flex-shrink:0;">LNG</span>
-                    <span id="ui-coord-lng" style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--orange-lt);letter-spacing:.5px;">—</span>
+            </div>
+
+            <!-- Koordinat besar -->
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="background:rgba(255,107,0,.1);border:1px solid rgba(255,107,0,.2);border-radius:6px;padding:3px 7px;font-size:9px;font-weight:800;color:var(--orange-lt);width:28px;text-align:center;flex-shrink:0;">LAT</div>
+                    <span id="ui-coord-lat" style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--orange-lt);letter-spacing:.5px;">Mencoba...</span>
                 </div>
-                <div style="margin-top:4px;padding-top:8px;border-top:1px solid rgba(255,107,0,.12);">
-                    <a id="ui-maps-link" href="#" target="_blank" rel="noopener"
-                       style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--success);text-decoration:none;opacity:.5;pointer-events:none;">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                        Buka di Google Maps
-                    </a>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="background:rgba(255,107,0,.1);border:1px solid rgba(255,107,0,.2);border-radius:6px;padding:3px 7px;font-size:9px;font-weight:800;color:var(--orange-lt);width:28px;text-align:center;flex-shrink:0;">LNG</div>
+                    <span id="ui-coord-lng" style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--orange-lt);letter-spacing:.5px;">Menangkap...</span>
+                </div>
+            </div>
+
+            <!-- Satelit + update terakhir -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,107,0,.1);">
+                <div style="display:flex;align-items:center;gap:5px;">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--text-faint)"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3 3l18 18"/></svg>
+                    <span style="font-size:10px;color:var(--text-faint);font-weight:600;">Satelit: </span>
+                    <span id="ui-sats-admin" style="font-size:10px;color:var(--text-mut);font-weight:700;font-family:'JetBrains Mono',monospace;">—</span>
+                </div>
+                <div style="font-size:10px;color:var(--text-faint);">
+                    Update: <span id="ui-last-update" style="font-family:'JetBrains Mono',monospace;color:var(--text-mut);">—</span>
+                </div>
+            </div>
+
+            <!-- Link Google Maps -->
+            <a id="ui-maps-link" href="#" target="_blank" rel="noopener"
+               style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;
+                      padding:9px;border-radius:9px;background:rgba(52,211,153,.08);
+                      border:1px solid rgba(52,211,153,.2);color:var(--success);
+                      font-size:11px;font-weight:700;text-decoration:none;
+                      opacity:.4;pointer-events:none;transition:all .3s;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                Buka Lokasi di Google Maps
+            </a>
+        </div>
+
+        <!-- Kecepatan + Baterai dalam satu baris -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="card">
+                <div class="label">Kecepatan</div>
+                <div style="display:flex;align-items:flex-end;gap:5px;margin-top:4px;">
+                    <span id="ui-speed" class="value-glow" style="font-size:28px;font-family:'Space Grotesk',sans-serif;font-weight:700;">0</span>
+                    <span style="font-size:11px;color:var(--text-mut);font-weight:600;padding-bottom:4px;">km/j</span>
+                </div>
+            </div>
+            <div class="card">
+                <div class="label">Baterai Alat</div>
+                <div style="display:flex;align-items:flex-end;gap:5px;margin-top:4px;">
+                    <span id="ui-battery-admin" class="value-glow" style="font-size:28px;font-family:'Space Grotesk',sans-serif;font-weight:700;">—</span>
+                    <span style="font-size:11px;color:var(--text-mut);font-weight:600;padding-bottom:4px;">%</span>
+                </div>
+                <div style="height:3px;background:rgba(255,107,0,.15);border-radius:2px;margin-top:4px;">
+                    <div id="ui-battery-bar-admin" style="height:100%;width:0%;background:var(--success);border-radius:2px;transition:width .5s;"></div>
                 </div>
             </div>
         </div>
@@ -702,14 +753,8 @@ document.addEventListener("DOMContentLoaded", function(){
             <span style="display:inline-block;margin-top:6px;padding:2px 8px;background:rgba(52,211,153,.15);color:#34D399;font-size:10px;font-weight:700;border-radius:4px;border:1px solid rgba(52,211,153,.3);">Base Station Hub Aktif</span>
         </div>`).openPopup();
 
-    if(isServerAdminLogged){
-        document.getElementById("login-screen").style.display="none";
-        document.getElementById("admin-tools").style.display="block";
-        document.getElementById("logout-btn").style.display="block";
-        let activeOtp = "{{ active_manifest_admin.otp_token if active_manifest_admin else '' }}";
-        if(activeOtp && activeOtp !== "None"){ switchTab('monitor'); }
-        fetchHistory();
-    }
+    // Login screen SELALU ditampilkan — admin wajib input password setiap kali
+    // isServerAdminLogged selalu False karena session dibersihkan di route /
     setTimeout(()=>{ map.invalidateSize(); }, 300);
 });
 
@@ -828,33 +873,79 @@ socket.on('ui_refresh',(data)=>{
     document.getElementById("ui-status").innerText = status;
     document.getElementById("ui-speed").innerText = _val(data.speed,"0");
 
-    // Update kartu koordinat GPS
-    if(data.lat && data.lng && data.last_seen !== 0){
-        const latVal = data.lat.toFixed(6);
-        const lngVal = data.lng.toFixed(6);
-        const latEl  = document.getElementById("ui-coord-lat");
-        const lngEl  = document.getElementById("ui-coord-lng");
-        const mapsEl = document.getElementById("ui-maps-link");
-        if(latEl) latEl.innerText = latVal + "°";
-        if(lngEl) lngEl.innerText = lngVal + "°";
-        if(mapsEl){
-            mapsEl.href = `https://www.google.com/maps?q=${latVal},${lngVal}`;
-            mapsEl.style.opacity = "1";
-            mapsEl.style.pointerEvents = "auto";
-        }
-    } else {
-        const latEl = document.getElementById("ui-coord-lat");
-        const lngEl = document.getElementById("ui-coord-lng");
-        const mapsEl = document.getElementById("ui-maps-link");
-        if(latEl) latEl.innerText = "—";
-        if(lngEl) lngEl.innerText = "—";
-        if(mapsEl){ mapsEl.style.opacity = "0.4"; mapsEl.style.pointerEvents = "none"; mapsEl.href = "#"; }
+    // ── Warna & chip status GPS ──
+    const pulse   = document.getElementById("gps-pulse-ring");
+    const chip    = document.getElementById("gps-status-chip");
+    const latEl   = document.getElementById("ui-coord-lat");
+    const lngEl   = document.getElementById("ui-coord-lng");
+    const mapsEl  = document.getElementById("ui-maps-link");
+    const satsEl  = document.getElementById("ui-sats-admin");
+    const updEl   = document.getElementById("ui-last-update");
+    const battEl  = document.getElementById("ui-battery-admin");
+    const battBar = document.getElementById("ui-battery-bar-admin");
+
+    let statusColor = "#FF5A4D";
+    let pulseColor  = "#FF5A4D";
+    let chipText    = "Mencoba Menangkap";
+    let chipBg      = "rgba(255,90,77,.15)";
+    let chipClr     = "#FF5A4D";
+    let chipBdr     = "rgba(255,90,77,.3)";
+
+    if(status.includes("GPS LOCK")){
+        statusColor="#34D399"; pulseColor="#34D399";
+        chipText="GPS LOCK ✓"; chipBg="rgba(52,211,153,.15)"; chipClr="#34D399"; chipBdr="rgba(52,211,153,.3)";
+    } else if(status.includes("MENCARI")){
+        statusColor="#F59E0B"; pulseColor="#F59E0B";
+        chipText="Mencari Sinyal..."; chipBg="rgba(245,158,11,.15)"; chipClr="#F59E0B"; chipBdr="rgba(245,158,11,.3)";
+    } else if(status.includes("DEEP SLEEP")){
+        statusColor="#3B82F6"; pulseColor="#3B82F6";
+        chipText="Deep Sleep 💤"; chipBg="rgba(59,130,246,.15)"; chipClr="#3B82F6"; chipBdr="rgba(59,130,246,.3)";
+    } else if(status.includes("ONLINE")){
+        statusColor="#34D399"; pulseColor="#34D399";
+        chipText="Online ✓"; chipBg="rgba(52,211,153,.15)"; chipClr="#34D399"; chipBdr="rgba(52,211,153,.3)";
     }
 
-    if(document.getElementById("monitor-live-lat")) document.getElementById("monitor-live-lat").innerText=data.lat?data.lat.toFixed(6):"-";
-    if(document.getElementById("monitor-live-lng")) document.getElementById("monitor-live-lng").innerText=data.lng?data.lng.toFixed(6):"-";
+    document.getElementById("ui-status").style.color = statusColor;
+    if(pulse){ pulse.style.background=pulseColor; pulse.style.boxShadow=`0 0 12px ${pulseColor}`; }
+    if(chip){
+        chip.innerText = chipText;
+        chip.style.background=chipBg; chip.style.color=chipClr; chip.style.borderColor=chipBdr;
+    }
+
+    // ── Koordinat GPS ──
+    const isDefaultCoord = (Math.abs(data.lat - (-6.885874)) < 0.0001 && Math.abs(data.lng - 107.538179) < 0.0001);
+    const hasRealGps = data.lat && data.lng && data.last_seen !== 0 && !isDefaultCoord;
+
+    if(hasRealGps){
+        const latVal = parseFloat(data.lat).toFixed(6);
+        const lngVal = parseFloat(data.lng).toFixed(6);
+        if(latEl){ latEl.innerText=latVal+"°"; latEl.style.color="var(--orange-lt)"; }
+        if(lngEl){ lngEl.innerText=lngVal+"°"; lngEl.style.color="var(--orange-lt)"; }
+        if(mapsEl){
+            mapsEl.href=`https://www.google.com/maps?q=${latVal},${lngVal}`;
+            mapsEl.style.opacity="1"; mapsEl.style.pointerEvents="auto";
+        }
+        if(updEl) updEl.innerText = new Date().toTimeString().split(" ")[0];
+    } else {
+        const isSleeping = status.includes("DEEP SLEEP");
+        if(latEl){ latEl.innerText=isSleeping?"Tidur...":"Mencoba..."; latEl.style.color="var(--text-faint)"; }
+        if(lngEl){ lngEl.innerText=isSleeping?"Tidur...":"Menangkap..."; lngEl.style.color="var(--text-faint)"; }
+        if(mapsEl){ mapsEl.style.opacity="0.3"; mapsEl.style.pointerEvents="none"; mapsEl.href="#"; }
+    }
+
+    // ── Satelit ──
+    if(satsEl) satsEl.innerText=(data.sats && data.sats!=="N/A")?data.sats+" sat":"Mencari...";
+
+    // ── Baterai ──
+    if(data.battery !== undefined && data.battery !== "-"){
+        const bpct = parseInt(data.battery)||0;
+        if(battEl) battEl.innerText=bpct;
+        if(battBar){ battBar.style.width=bpct+"%"; battBar.style.background=bpct>50?"#34D399":bpct>20?"#F59E0B":"#FF5A4D"; }
+    }
+
+    if(document.getElementById("monitor-live-lat")) document.getElementById("monitor-live-lat").innerText=data.lat?parseFloat(data.lat).toFixed(6):"-";
+    if(document.getElementById("monitor-live-lng")) document.getElementById("monitor-live-lng").innerText=data.lng?parseFloat(data.lng).toFixed(6):"-";
     if(document.getElementById("monitor-live-speed")) document.getElementById("monitor-live-speed").innerText=_val(data.speed,"0")+" km/jam";
-    document.getElementById("ui-status").style.color = status.includes("ONLINE") ? "#34D399":"#FF5A4D";
     if(data.last_seen===0){
         if(trackingMarker){map.removeLayer(trackingMarker);trackingMarker=null;}
         if(radarCircle){map.removeLayer(radarCircle);radarCircle=null;}

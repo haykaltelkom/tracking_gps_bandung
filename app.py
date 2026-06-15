@@ -67,6 +67,12 @@ safety_status = {
     "pemaksaan_buka": False
 }
 
+# ─── Konfigurasi timing Deep Sleep ───
+# Alat bangun ~30 detik tiap siklus, lalu tidur ~15 menit (900 detik)
+DEEP_SLEEP_GRACE   = 60     # Dalam 60 detik terakhir = baru kirim (ONLINE)
+DEEP_SLEEP_CYCLE   = 1200   # Sampai 20 menit = masih deep sleep normal (siklus + buffer)
+# Lebih dari DEEP_SLEEP_CYCLE = benar-benar OFFLINE (alat mati/hilang)
+
 # ─── Evidence ───
 EVIDENCE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'evidence')
 os.makedirs(EVIDENCE_DIR, exist_ok=True)
@@ -110,7 +116,8 @@ def _save_image_bytes(raw):
     fname = f"evd_{int(time.time()*1000)}_{random.randint(100,999)}.jpg"
     with open(os.path.join(EVIDENCE_DIR, fname), 'wb') as out:
         out.write(raw)
-    return url_for('static', filename=f'evidence/{fname}')
+    # Gunakan path statis langsung — tidak butuh application context
+    return f"/static/evidence/{fname}"
 
 def _save_b64_image(b64):
     if not b64:
@@ -118,8 +125,12 @@ def _save_b64_image(b64):
     if isinstance(b64, str) and b64.strip().startswith('data:') and ',' in b64:
         b64 = b64.split(',', 1)[1]
     try:
+        # Bersihkan whitespace/newline yang mungkin ada di base64 dari firmware
+        if isinstance(b64, str):
+            b64 = b64.strip().replace('\n', '').replace('\r', '').replace(' ', '')
         raw = base64.b64decode(b64)
-    except Exception:
+    except Exception as e:
+        print(f"❌ Gagal decode base64: {e}")
         return None
     return _save_image_bytes(raw)
 
@@ -138,14 +149,28 @@ def _clear_evidence_files():
 def check_device_heartbeat():
     global current_telemetry
     while True:
-        socketio.sleep(2)
+        socketio.sleep(5)
         if current_telemetry["last_seen"] > 0:
-            if time.time() - current_telemetry["last_seen"] > 30:
-                if "ONLINE" in current_telemetry["status"]:
-                    print("⚠️ Hardware terputus. Status → OFFLINE.")
-                    current_telemetry["status"] = "❌ OFFLINE (ALAT MATI)"
-                    current_telemetry["speed"] = "0"
-                    socketio.emit('ui_refresh', {**current_telemetry, **safety_status})
+            elapsed = time.time() - current_telemetry["last_seen"]
+            prev_status = current_telemetry["status"]
+
+            if elapsed <= DEEP_SLEEP_GRACE:
+                # Baru saja kirim data — ONLINE aktif
+                new_status = current_telemetry.get("_base_status", "🟢 ONLINE (GPS LOCK)")
+            elif elapsed <= DEEP_SLEEP_CYCLE:
+                # Alat sedang deep sleep (normal, hemat baterai)
+                new_status = "🔵 DEEP SLEEP (HEMAT BATERAI)"
+                current_telemetry["speed"] = "0"
+            else:
+                # Lebih dari siklus normal — alat benar-benar mati/hilang
+                new_status = "❌ OFFLINE (ALAT MATI)"
+                current_telemetry["speed"] = "0"
+
+            # Emit hanya kalau status berubah
+            if new_status != prev_status:
+                print(f"🔄 Status alat: {prev_status} → {new_status} (idle {int(elapsed)}s)")
+                current_telemetry["status"] = new_status
+                socketio.emit('ui_refresh', {**current_telemetry, **safety_status})
 
 
 # ==========================================================
@@ -209,6 +234,7 @@ def on_message(client, userdata, msg):
         current_telemetry.update({
             "device_id": real_device_id,
             "status":    status_str,
+            "_base_status": status_str,  # Status dasar saat alat aktif (untuk heartbeat)
             "speed":     spd_val,
             "lat":       lat_val,
             "lng":       lng_val,
@@ -245,49 +271,123 @@ def on_message(client, userdata, msg):
         socketio.emit('ui_refresh', payload_emit)
         print(f"📡 Emit ui_refresh → lat={lat_val} lng={lng_val} status={status_str}")
 
-        # ── Gambar inline di payload (jpeg_b64) ──
-        jpeg_b64 = cam.get("jpeg_b64", "")
-        if jpeg_b64 and len(jpeg_b64) > 100:
-            print(f"📸 Gambar inline ditemukan ({len(jpeg_b64)} chars b64)")
-            saved = _save_b64_image(jpeg_b64)
-            if saved:
-                _append_evidence(saved, event_type or "MQTT_INLINE", data.get("device_id", "-"))
-
-        # ── Jika delivery:"separate_topic" → tunggu topic image ──
-        elif cam.get("delivery") == "separate_topic":
-            print(f"📡 Gambar akan datang via topic terpisah ({cam.get('frame_count',0)} frame)")
+        # ── Proses gambar dari payload kamera ──
+        _process_camera_payload(cam, event_type, data.get("device_id", "-"))
 
     except Exception as e:
         print(f"❌ Gagal proses MQTT: {e}")
 
 
+def _process_camera_payload(cam, event_type, dev_id):
+    """
+    Proses gambar dari payload kamera alat IoT.
+    Mendukung 3 cara pengiriman:
+      1. jpeg_b64 langsung di payload (inline)
+      2. frames[] array berisi beberapa gambar burst
+      3. delivery:"separate_topic" → tunggu topic .../image
+    """
+    if not cam:
+        return
+
+    # ── Cara 1: jpeg_b64 inline di payload ──
+    jpeg_b64 = cam.get("jpeg_b64", "")
+    if jpeg_b64 and len(jpeg_b64) > 100:
+        print(f"📸 Gambar inline ditemukan ({len(jpeg_b64)} chars b64)")
+        saved = _save_b64_image(jpeg_b64)
+        if saved:
+            _append_evidence(saved, event_type or "KAMERA_AKTIF", dev_id)
+        return
+
+    # ── Cara 2: frames[] array (burst capture dari camgr_capture_burst) ──
+    frames = cam.get("frames", [])
+    if frames:
+        print(f"📸 Burst {len(frames)} frame ditemukan")
+        for i, frame in enumerate(frames):
+            b64 = frame.get("jpeg_b64", "") or frame.get("data", "")
+            if b64 and len(b64) > 100:
+                saved = _save_b64_image(b64)
+                if saved:
+                    _append_evidence(saved, event_type or "BURST_FRAME", dev_id)
+                    print(f"   ✅ Frame {i+1}/{len(frames)} disimpan")
+        return
+
+    # ── Cara 3: separate_topic → gambar akan datang via .../image ──
+    if cam.get("delivery") == "separate_topic":
+        fc = cam.get("frame_count", 0)
+        print(f"📡 {fc} gambar akan datang via topic image terpisah")
+        return
+
+    # Tidak ada gambar di payload ini
+    if cam.get("available"):
+        print(f"📷 Kamera tersedia tapi belum kirim gambar (available={cam.get('available')})")
+
+
 def _handle_mqtt_image(payload):
-    """Handle gambar yang datang via topic pos/secure/telemetri/image."""
+    """
+    Handle gambar yang datang via topic telemetry/vg/<id>/image.
+    Mendukung:
+      - JSON wrapper: {"jpeg_b64":"...", "event_type":"...", "frame_index":0}
+      - JSON array frames: {"frames":[{"jpeg_b64":"...","frame_index":0}, ...]}
+      - Raw base64 string
+      - Raw JPEG bytes
+    """
     global captured_evidence, last_evidence_meta
     try:
-        # Coba parse sebagai JSON dulu (mungkin ada wrapper)
-        try:
-            obj      = json.loads(payload.decode('utf-8'))
-            b64_data = obj.get("jpeg_b64") or obj.get("image") or obj.get("data", "")
-            trigger  = obj.get("event_type", "MQTT_IMAGE")
-            dev_id   = obj.get("device_id", "-")
-        except Exception:
-            # Payload langsung base64 string
-            b64_data = payload.decode('utf-8')
-            trigger  = "MQTT_IMAGE"
-            dev_id   = "-"
+        raw_text = payload.decode('utf-8', errors='ignore')
 
-        if b64_data and len(b64_data) > 100:
-            saved = _save_b64_image(b64_data)
+        # ── Coba parse JSON ──
+        try:
+            obj = json.loads(raw_text)
+            trigger = obj.get("event_type", "KAMERA_TAMPER")
+            dev_id  = obj.get("device_id", "-")
+
+            # Format array frames (burst dari firmware)
+            frames = obj.get("frames", [])
+            if frames:
+                print(f"📸 Terima {len(frames)} frame burst via topic image")
+                for i, frame in enumerate(frames):
+                    b64 = frame.get("jpeg_b64", "") or frame.get("data", "")
+                    if b64 and len(b64) > 100:
+                        saved = _save_b64_image(b64)
+                        if saved:
+                            _append_evidence(saved, trigger, dev_id)
+                            print(f"   ✅ Frame burst {i+1}/{len(frames)} disimpan")
+                return
+
+            # Format single frame
+            b64_data = (obj.get("jpeg_b64") or obj.get("image") or
+                        obj.get("data") or obj.get("frame") or "")
+            if b64_data and len(b64_data) > 100:
+                saved = _save_b64_image(b64_data)
+                if saved:
+                    _append_evidence(saved, trigger, dev_id)
+                    idx = obj.get("frame_index", "")
+                    print(f"✅ Gambar JSON frame={idx} disimpan: {saved}")
+                return
+
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            pass
+
+        # ── Coba sebagai raw base64 string ──
+        if len(raw_text) > 100 and all(c in
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
+            for c in raw_text.strip()[:50]):
+            saved = _save_b64_image(raw_text.strip())
             if saved:
-                _append_evidence(saved, trigger, dev_id)
-                print(f"✅ Gambar dari topic image disimpan: {saved}")
-        else:
-            # Payload mungkin raw JPEG bytes
+                _append_evidence(saved, "KAMERA_RAW_B64", "-")
+                print(f"✅ Gambar raw base64 disimpan: {saved}")
+            return
+
+        # ── Terakhir: coba sebagai raw JPEG bytes ──
+        if len(payload) > 100 and payload[0] == 0xFF and payload[1] == 0xD8:
             saved = _save_image_bytes(payload)
             if saved:
-                _append_evidence(saved, "MQTT_IMAGE_RAW", "-")
-                print(f"✅ Gambar raw bytes disimpan: {saved}")
+                _append_evidence(saved, "KAMERA_JPEG_RAW", "-")
+                print(f"✅ Gambar raw JPEG bytes disimpan: {saved}")
+            return
+
+        print(f"⚠️ Payload topic image tidak dikenali ({len(payload)} bytes)")
+
     except Exception as e:
         print(f"❌ Gagal proses gambar MQTT: {e}")
 
@@ -601,7 +701,7 @@ def reset_tracking_node():
                 dst   = os.path.join(HISTORY_PHOTO_DIR, f"{active_manifest['device_id']}_{fname}")
                 if os.path.exists(src):
                     shutil.copy2(src, dst)
-                    saved_photo_urls.append(url_for('static', filename=f'history_photos/{active_manifest["device_id"]}_{fname}'))
+                    saved_photo_urls.append(f"/static/history_photos/{active_manifest['device_id']}_{fname}")
             except Exception as e:
                 print(f"Gagal salin foto: {e}")
 

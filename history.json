@@ -1,1 +1,30 @@
-[]
+[
+    {
+        "device_id": "NODE-HV-7409X",
+        "otp_token": "E76",
+        "cust_name": "HAYKAL",
+        "cust_phone": "085798221858",
+        "address": "CIMAHI",
+        "item_type": "LOGAM",
+        "item_value": "Rp 19.000.000",
+        "courier": "Kurir High-Value Specialist",
+        "started_at": "15/06/2026 20:23 WIB",
+        "ended_at": "15/06/2026 20:24 WIB",
+        "last_location": [
+            -6.885874,
+            107.538179
+        ],
+        "last_speed": "0",
+        "safety_summary": {
+            "benturan": true,
+            "waktu_benturan": "20:24:03 WIB",
+            "pemaksaan_buka": true
+        },
+        "total_photos": 1,
+        "photo_urls": [
+            "/static/history_photos/NODE-HV-7409X_evd_1781529843876_867.jpg"
+        ],
+        "evidence_trigger": "KAMERA_TAMPER",
+        "evidence_time": "20:24:03 WIB"
+    }
+]
