@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pos Logistik — Admin Command Center</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+:root{
+    --orange:#FF6B00;
+    --orange-lt:#FF9A4D;
+    --orange-dp:#C2410C;
+    --glow:rgba(255,107,0,.45);
+    --glow-soft:rgba(255,107,0,.18);
+    --bg-0:#0A0704;
+    --bg-1:#0E0A06;
+    --panel:rgba(20,14,9,.78);
+    --card-grad:linear-gradient(155deg, rgba(34,24,15,.92), rgba(18,13,8,.94));
+    --border:rgba(255,107,0,.20);
+    --border-lit:rgba(255,154,77,.45);
+    --text:#FBF3EA;
+    --text-mut:#B59C86;
+    --text-faint:#7E6E5E;
+    --success:#34D399;
+    --success-bg:rgba(52,211,153,.12);
+    --danger:#FF5A4D;
+    --danger-bg:rgba(255,90,77,.12);
+    --depth:
+        0 1px 0 rgba(255,255,255,.06) inset,
+        0 -2px 0 rgba(0,0,0,.45) inset,
+        0 2px 6px rgba(0,0,0,.5),
+        0 16px 38px rgba(0,0,0,.55);
+}
+
+*{box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;margin:0;padding:0;}
+
+body{
+    background:
+        radial-gradient(130% 90% at 12% -10%, #25140A 0%, transparent 46%),
+        radial-gradient(120% 90% at 100% 0%, #1C1107 0%, transparent 50%),
+        var(--bg-0);
+    color:var(--text);
+    height:100vh;display:flex;flex-direction:column;overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+}
+
+.amb-orb{position:fixed;border-radius:50%;filter:blur(70px);z-index:0;pointer-events:none;opacity:.5;}
+.amb-orb.o1{width:520px;height:520px;background:radial-gradient(circle,rgba(255,107,0,.30),transparent 70%);top:-160px;left:-120px;animation:orbFloat 11s ease-in-out infinite alternate;}
+.amb-orb.o2{width:420px;height:420px;background:radial-gradient(circle,rgba(255,154,77,.18),transparent 70%);bottom:-140px;right:-80px;animation:orbFloat 14s ease-in-out infinite alternate-reverse;}
+@keyframes orbFloat{0%{transform:translate(-20px,-15px) scale(1);}100%{transform:translate(30px,25px) scale(1.12);}}
+
+/* ─── HEADER ─── */
+header{
+    background:linear-gradient(180deg, rgba(22,15,9,.92), rgba(12,9,5,.88));
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border);
+    box-shadow:0 6px 30px rgba(0,0,0,.5), 0 1px 0 rgba(255,154,77,.18) inset;
+    padding:0 26px;display:flex;justify-content:space-between;align-items:center;
+    z-index:1000;height:80px;position:relative;overflow:hidden;flex-shrink:0;
+}
+header::before{
+    content:'';position:absolute;left:0;right:0;bottom:0;height:2px;
+    background:linear-gradient(90deg,transparent,var(--orange),var(--orange-lt),var(--orange),transparent);
+    background-size:200% 100%;animation:ticker 5s linear infinite;
+}
+@keyframes ticker{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+header::after{
+    content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
+    background:linear-gradient(105deg,transparent,rgba(255,154,77,.10),transparent);
+    transform:skewX(-18deg);animation:sweep 6s ease-in-out infinite;
+}
+@keyframes sweep{0%{left:-60%;}55%{left:140%;}100%{left:140%;}}
+
+.logo-section{display:flex;align-items:center;gap:15px;z-index:2;}
+.logo-badge{
+    background:#fff;padding:6px 12px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 1px rgba(255,255,255,.15), 0 8px 22px rgba(0,0,0,.5), 0 0 24px rgba(255,107,0,.2);
+}
+.pos-logo-img{height:40px;display:block;}
+.brand-title h1{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;letter-spacing:.5px;color:#fff;text-shadow:0 0 18px rgba(255,154,77,.25);}
+.brand-title p{font-size:10px;color:var(--orange-lt);font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-top:3px;}
+
+/* Admin badge di header */
+.admin-crown-badge{
+    display:flex;align-items:center;gap:8px;
+    background:linear-gradient(135deg,rgba(255,107,0,.2),rgba(194,65,12,.15));
+    border:1px solid rgba(255,107,0,.4);padding:6px 14px;border-radius:8px;
+    font-size:11px;font-weight:800;color:var(--orange-lt);letter-spacing:.6px;text-transform:uppercase;
+    box-shadow:0 0 16px rgba(255,107,0,.15) inset;
+}
+
+.system-status{display:flex;align-items:center;gap:13px;z-index:2;}
+#digital-clock{color:var(--text-mut)!important;font-family:'JetBrains Mono',monospace!important;font-size:15px!important;font-weight:700!important;letter-spacing:.5px!important;}
+
+.btn-logout{
+    background:rgba(255,90,77,.08);border:1px solid rgba(255,90,77,.4);color:#FF8B82;
+    padding:8px 16px;font-size:12px;font-weight:700;border-radius:8px;cursor:pointer;
+    text-transform:uppercase;letter-spacing:.4px;transition:all .2s;
+}
+.btn-logout:hover{background:var(--danger);color:#fff;box-shadow:0 0 22px rgba(255,90,77,.5);}
+
+.status-indicator{
+    display:flex;align-items:center;gap:8px;background:var(--success-bg);
+    border:1px solid rgba(52,211,153,.3);padding:8px 14px;border-radius:8px;
+    color:var(--success);font-weight:700;font-size:12px;letter-spacing:.4px;
+    box-shadow:0 0 18px rgba(52,211,153,.12) inset;
+}
+.status-dot{width:8px;height:8px;background:var(--success);border-radius:50%;box-shadow:0 0 12px var(--success);animation:pulse 1.5s infinite alternate;}
+@keyframes pulse{0%{transform:scale(.7);opacity:.6;}100%{transform:scale(1.25);opacity:1;}}
+
+/* ─── MAIN ─── */
+.main-container{display:flex;flex:1;position:relative;height:calc(100vh - 80px);overflow:hidden;z-index:1;}
+#map{flex:1;height:100%;width:100%;min-height:100%;background:#0A0704;}
+
+#panel{
+    width:444px;height:100%;
+    background:var(--panel);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+    border-left:1px solid var(--border);
+    padding:24px;overflow-y:auto;z-index:999;
+    box-shadow:-18px 0 50px rgba(0,0,0,.6), 1px 0 0 rgba(255,154,77,.12) inset;
+    display:flex;flex-direction:column;gap:18px;
+    transition:transform .4s cubic-bezier(.25,1,.5,1), width .4s ease;
+    position:relative;flex-shrink:0;
+}
+#panel::before{
+    content:'';position:absolute;inset:0;pointer-events:none;z-index:-1;opacity:.5;
+    background-image:linear-gradient(rgba(255,107,0,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,107,0,.05) 1px,transparent 1px);
+    background-size:38px 38px;
+    mask:radial-gradient(120% 80% at 70% 0%, #000 0%, transparent 75%);
+}
+.panel-closed #panel{transform:translateX(444px);width:0;padding:0;border-left:none;}
+
+.toggle-sidebar-btn{
+    position:absolute;top:24px;right:444px;width:34px;height:54px;
+    background:linear-gradient(180deg,#1C140C,#120D07);border:1px solid var(--border);border-right:none;
+    border-radius:10px 0 0 10px;cursor:pointer;z-index:1000;display:flex;align-items:center;justify-content:center;
+    color:var(--orange-lt);box-shadow:-6px 6px 18px rgba(0,0,0,.5);transition:right .4s cubic-bezier(.25,1,.5,1),background .2s;outline:none;
+}
+.toggle-sidebar-btn:hover{background:#241810;box-shadow:-6px 6px 24px var(--glow-soft);}
+.panel-closed .toggle-sidebar-btn{right:0;border-right:1px solid var(--border);}
+.panel-closed .toggle-sidebar-btn svg{transform:rotate(180deg);}
+#panel::-webkit-scrollbar{width:6px;}
+#panel::-webkit-scrollbar-thumb{background:rgba(255,107,0,.3);border-radius:3px;}
+
+/* ─── TABS ─── */
+.cyber-tabs{
+    display:grid;grid-template-columns:repeat(2,1fr);background:rgba(10,7,4,.7);
+    border:1px solid var(--border);border-radius:13px;padding:4px;
+    box-shadow:0 2px 10px rgba(0,0,0,.4) inset;
+}
+.tab-btn{
+    background:transparent;border:none;color:var(--text-mut);font-size:11px;font-weight:800;
+    text-transform:uppercase;padding:11px;cursor:pointer;border-radius:9px;transition:all .3s;letter-spacing:.5px;
+}
+.tab-btn.active{
+    background:linear-gradient(180deg,#FF8A3D,var(--orange) 60%,#E25E00);color:#fff;
+    box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 -2px 0 rgba(150,60,0,.5) inset,0 6px 18px var(--glow);
+}
+.tab-content{display:none;flex-direction:column;gap:18px;}
+.tab-content.active{display:flex;}
+
+/* ─── CARDS & TYPOGRAPHY ─── */
+.section-title{
+    font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--orange-lt);margin-top:6px;display:flex;align-items:center;gap:10px;
+    text-shadow:0 0 14px rgba(255,154,77,.3);
+}
+.section-title::before{content:'';width:16px;height:2px;background:var(--orange);border-radius:2px;box-shadow:0 0 8px var(--orange);}
+.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+
+.card{
+    background:var(--card-grad);border:1px solid var(--border);border-top:1px solid var(--border-lit);
+    padding:16px 20px;border-radius:16px;box-shadow:var(--depth);
+    display:flex;flex-direction:column;gap:8px;position:relative;
+    transition:transform .25s ease, box-shadow .25s ease;
+}
+.card::after{
+    content:'';position:absolute;top:0;left:0;right:0;height:42%;border-radius:16px 16px 0 0;
+    background:linear-gradient(180deg,rgba(255,255,255,.04),transparent);pointer-events:none;z-index:0;
+}
+.card > *{position:relative;z-index:1;}
+.card:hover{transform:translateY(-3px);box-shadow:var(--depth),0 0 26px var(--glow-soft);}
+
+.label{font-size:11px;color:var(--text-mut);text-transform:uppercase;font-weight:800;letter-spacing:1px;margin-bottom:2px;}
+.value{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:#fff;line-height:1.3;word-break:break-word;display:block;}
+.value-glow{color:var(--orange-lt);text-shadow:0 1px 3px rgba(0,0,0,.8),0 0 14px var(--glow);}
+
+/* ─── NAV BUTTONS ─── */
+.radar-nav-grid{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:12px;
+    background:rgba(14,10,6,.4);border:1px solid var(--border);padding:14px;border-radius:14px;box-shadow:var(--depth);
+}
+.btn-nav-radar{
+    display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 14px;
+    font-size:11.5px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.5px;
+    border-radius:10px;cursor:pointer;transition:all .25s ease;outline:none;
+}
+.btn-nav-hub{
+    background:linear-gradient(180deg, rgba(30,41,59,.8), rgba(15,23,42,.9));
+    border:1px solid rgba(255,154,77,.25);box-shadow:0 4px 12px rgba(0,0,0,.4);
+}
+.btn-nav-hub:hover{border-color:var(--orange);background:rgba(30,41,59,1);box-shadow:0 0 16px var(--glow-soft);transform:translateY(-1.5px);}
+.btn-nav-realtime{
+    background:linear-gradient(180deg, rgba(255,107,0,.15), rgba(18,13,8,.8));
+    border:1px solid var(--border);box-shadow:0 4px 15px var(--glow-soft);
+}
+.btn-nav-realtime:hover{background:linear-gradient(180deg,#FF8A3D,var(--orange) 60%,#E25E00);border-color:var(--orange-lt);box-shadow:0 0 20px var(--glow);transform:translateY(-1.5px);}
+.btn-nav-radar:active{transform:translateY(1px);}
+
+.ping-marker-shell{position:relative;display:flex;width:8px;height:8px;}
+.ping-radar-core{position:absolute;inline-size:100%;block-size:100%;background-color:var(--success);border-radius:50%;}
+.ping-radar-wave{position:absolute;inline-size:100%;block-size:100%;background-color:var(--success);border-radius:50%;animation:pingWave 1.4s ease-out infinite;opacity:.75;}
+@keyframes pingWave{100%{transform:scale(2.5);opacity:0;}}
+
+/* ─── FORMS ─── */
+.form-group-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:4px;}
+.form-field{display:flex;flex-direction:column;gap:6px;}
+.form-field.full-width{grid-column:span 2;}
+.form-field label{font-size:11px;font-weight:700;color:var(--text-mut);text-transform:uppercase;letter-spacing:.4px;}
+
+input,select{
+    width:100%;padding:12px 14px;background:#0C0905;border:1px solid var(--border);color:#fff;font-size:13px;
+    border-radius:9px;outline:none;transition:all .2s;box-shadow:0 2px 6px rgba(0,0,0,.5) inset;
+}
+input::placeholder{color:var(--text-faint);}
+input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px var(--glow-soft),0 2px 6px rgba(0,0,0,.5) inset;}
+select option{background:#15100A;color:#fff;}
+
+.btn-primary{
+    width:100%;padding:14px;border:none;color:#fff;font-size:13px;font-weight:800;cursor:pointer;border-radius:11px;
+    margin-top:8px;letter-spacing:.7px;text-transform:uppercase;
+    background:linear-gradient(180deg,#FF9A4D,var(--orange) 48%,#DA5D00);
+    box-shadow:0 1px 0 rgba(255,255,255,.45) inset,0 -3px 0 rgba(150,60,0,.55) inset,0 10px 24px var(--glow);
+    transition:transform .12s ease, box-shadow .2s ease;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 1px 0 rgba(255,255,255,.45) inset,0 -3px 0 rgba(150,60,0,.55) inset,0 14px 32px var(--glow);}
+.btn-primary:active{transform:translateY(2px);}
+
+.btn-danger-action{
+    width:100%;padding:13px;border:1px solid rgba(255,90,77,.5);color:#fff;font-size:11px;font-weight:800;cursor:pointer;
+    border-radius:10px;margin-top:12px;letter-spacing:.6px;text-transform:uppercase;
+    background:linear-gradient(180deg,#FF6A5E,#C8372B);
+    box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 -2px 0 rgba(120,20,15,.5) inset,0 8px 20px rgba(200,55,43,.35);
+    transition:transform .12s,box-shadow .2s;
+}
+.btn-danger-action:hover{transform:translateY(-2px);box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 -2px 0 rgba(120,20,15,.5) inset,0 12px 28px rgba(200,55,43,.5);}
+
+/* ─── TABLES & MISC ─── */
+.detail-table{width:100%;border-collapse:collapse;}
+.detail-table td{padding:10px 0;border-bottom:1px solid rgba(255,154,77,.08);font-size:13px;color:#E9DECF;vertical-align:top;}
+.detail-table tr:last-child td{border-bottom:none;}
+.detail-table td:first-child{color:var(--text-mut);font-weight:500;}
+.detail-table td:last-child{font-weight:700;text-align:right;color:#fff;padding-left:14px;word-break:break-word;}
+
+.monitor-card{border-color:rgba(52,211,153,.3);}
+.monitor-sub{margin-top:14px;padding-top:12px;border-top:1px dashed rgba(255,154,77,.18);}
+.monitor-sub .label{display:block;margin-bottom:6px;}
+
+/* ─── QR VAULT ─── */
+.qr-vault{
+    background:var(--card-grad);padding:22px;border-radius:16px;
+    border:1px solid var(--border);border-top:1px solid var(--border-lit);box-shadow:var(--depth);position:relative;overflow:hidden;
+}
+
+/* OTP stamp with perforation effect */
+.stamp-otp{
+    position:relative;padding:16px 14px;text-align:center;margin-bottom:18px;border-radius:6px;
+    background:linear-gradient(120deg,rgba(255,107,0,.16),rgba(52,211,153,.12),rgba(255,107,0,.16));
+    background-size:220% 100%;animation:holo 5s linear infinite;
+    border:1px solid rgba(255,154,77,.25);
+}
+@keyframes holo{0%{background-position:0 0;}100%{background-position:220% 0;}}
+.stamp-otp::before,.stamp-otp::after{
+    content:'';position:absolute;left:0;right:0;height:10px;
+    background-image:radial-gradient(circle 5px at center, transparent 4px, #16100A 4.5px);
+    background-size:14px 10px;background-repeat:repeat-x;
+}
+.stamp-otp::before{top:-5px;}
+.stamp-otp::after{bottom:-5px;transform:rotate(180deg);}
+.stamp-otp .otp-cap{display:block;font-size:10px;color:var(--orange-lt);font-weight:800;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;}
+#display-otp-value{font-family:'Space Grotesk',sans-serif;font-size:30px;color:#fff;letter-spacing:7px;font-weight:700;text-shadow:0 0 18px var(--glow);}
+
+/* User URL badge */
+.user-url-badge{
+    background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);
+    border-radius:8px;padding:10px 14px;margin-top:14px;text-align:center;
+}
+.user-url-badge .url-label{font-size:10px;color:var(--text-mut);font-weight:700;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:4px;}
+.user-url-badge .url-value{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--success);font-weight:700;word-break:break-all;}
+
+#qrcode{display:flex;justify-content:center;background:#fff;padding:14px;border-radius:10px;width:fit-content;margin:0 auto;box-shadow:0 8px 24px rgba(0,0,0,.5);}
+#qr-link-display{color:var(--text-faint);font-size:11px;font-family:'JetBrains Mono',monospace;word-break:break-all;text-align:center;margin-top:10px;font-weight:600;}
+
+.btn-download-qr{
+    width:100%;padding:13px;border:none;color:#fff;border-radius:10px;font-weight:800;cursor:pointer;font-size:12px;margin-top:14px;letter-spacing:.5px;
+    background:linear-gradient(180deg,#FF9A4D,var(--orange) 50%,#DA5D00);
+    box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 -3px 0 rgba(150,60,0,.5) inset,0 8px 20px var(--glow);
+    transition:transform .12s;
+}
+.btn-download-qr:hover{transform:translateY(-2px);}
+
+/* Share user URL button */
+.btn-copy-user-url{
+    width:100%;padding:12px;border:1px solid rgba(52,211,153,.35);color:var(--success);border-radius:10px;
+    font-weight:800;cursor:pointer;font-size:12px;margin-top:10px;letter-spacing:.5px;text-transform:uppercase;
+    background:var(--success-bg);transition:all .2s;
+}
+.btn-copy-user-url:hover{background:rgba(52,211,153,.2);box-shadow:0 0 16px rgba(52,211,153,.2);}
+
+/* ─── HISTORY ─── */
+#history-box-container{display:flex;flex-direction:column;gap:12px;}
+
+/* ─── LOGIN GATEWAY (ADMIN ONLY) ─── */
+#login-screen{
+    position:fixed;inset:0;z-index:9999;overflow:hidden;display:flex;justify-content:center;align-items:center;
+    background:
+        radial-gradient(120% 80% at 50% 120%, rgba(255,107,0,.18) 0%, transparent 55%),
+        radial-gradient(100% 70% at 50% -10%, #2A1709 0%, transparent 50%),
+        var(--bg-0);
+    perspective:1000px;
+}
+.grid-floor{
+    position:absolute;left:-30%;right:-30%;bottom:-10%;height:75%;z-index:0;pointer-events:none;
+    background-image:linear-gradient(rgba(255,107,0,.45) 1px,transparent 1px),linear-gradient(90deg,rgba(255,107,0,.30) 1px,transparent 1px);
+    background-size:60px 60px;
+    transform:rotateX(74deg);transform-origin:center bottom;
+    mask:linear-gradient(to top,#000 4%,transparent 70%);
+    animation:floor 4s linear infinite;
+}
+@keyframes floor{from{background-position:0 0;}to{background-position:0 60px;}}
+.horizon-glow{
+    position:absolute;left:0;right:0;bottom:24%;height:160px;z-index:0;pointer-events:none;
+    background:radial-gradient(60% 100% at 50% 100%, rgba(255,138,61,.4), transparent 70%);filter:blur(6px);
+}
+.scene-orb{position:absolute;border-radius:50%;filter:blur(60px);z-index:0;pointer-events:none;}
+.scene-orb.a{width:380px;height:380px;background:radial-gradient(circle,rgba(255,107,0,.28),transparent 70%);top:8%;left:10%;animation:orbFloat 9s ease-in-out infinite alternate;}
+.scene-orb.b{width:300px;height:300px;background:radial-gradient(circle,rgba(52,211,153,.16),transparent 70%);top:18%;right:12%;animation:orbFloat 12s ease-in-out infinite alternate-reverse;}
+
+/* Admin-only login box — single centered panel */
+.gateway-container-single{display:flex;justify-content:center;z-index:3;width:100%;padding:0 20px;}
+
+.login-box-premium{
+    width:440px;max-width:100%;position:relative;padding:48px 40px;border-radius:22px;text-align:center;
+    background:linear-gradient(160deg, rgba(36,25,16,.86), rgba(16,11,7,.9));
+    backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+    border:1px solid var(--border);border-top:1px solid var(--border-lit);
+    box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 30px 70px rgba(0,0,0,.7),0 0 40px rgba(255,107,0,.08);
+}
+
+/* Decorative corner accents */
+.login-box-premium::before,.login-box-premium::after{
+    content:'';position:absolute;width:24px;height:24px;border-color:var(--orange);border-style:solid;opacity:.6;
+}
+.login-box-premium::before{top:16px;left:16px;border-width:2px 0 0 2px;border-radius:4px 0 0 0;}
+.login-box-premium::after{bottom:16px;right:16px;border-width:0 2px 2px 0;border-radius:0 0 4px 0;}
+
+.login-logo-holder{background:#fff;padding:10px 24px;border-radius:12px;width:fit-content;margin:0 auto 22px auto;box-shadow:0 12px 30px rgba(0,0,0,.5),0 0 24px rgba(255,107,0,.2);}
+.login-logo-holder img{height:40px;display:block;}
+
+.login-box-premium h2{font-family:'Space Grotesk',sans-serif;color:#fff;font-size:22px;font-weight:700;letter-spacing:.5px;margin-bottom:4px;}
+.login-tagline{color:var(--text-mut);font-size:12.5px;font-weight:500;margin-bottom:28px;line-height:1.5;}
+
+/* Restricted access badge */
+.access-restricted-badge{
+    display:inline-flex;align-items:center;gap:6px;
+    background:rgba(255,90,77,.1);border:1px solid rgba(255,90,77,.3);
+    color:#FF8B82;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;
+    padding:5px 12px;border-radius:20px;margin-bottom:24px;
+}
+.access-restricted-badge::before{content:'';width:6px;height:6px;background:#FF5A4D;border-radius:50%;box-shadow:0 0 8px #FF5A4D;animation:pulse 1.5s infinite alternate;}
+
+.cyber-input-wrapper{position:relative;margin-bottom:18px;}
+.cyber-input-wrapper .input-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--text-faint);transition:color .25s;z-index:2;}
+.input-cyber-style{
+    width:100%;padding:14px 16px 14px 52px;background:rgba(10,7,4,.85);border:1px solid var(--border);
+    color:#fff;font-size:15px;text-align:center;border-radius:11px;transition:all .25s;
+    box-shadow:0 2px 8px rgba(0,0,0,.5) inset;letter-spacing:3px;
+}
+.input-cyber-style::placeholder{letter-spacing:0;color:var(--text-faint);}
+.input-cyber-style:focus{border-color:var(--orange);box-shadow:0 0 0 3px var(--glow-soft),0 2px 8px rgba(0,0,0,.5) inset;}
+
+.btn-cyber-submit{
+    width:100%;padding:15px;border:none;color:#fff;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;
+    border-radius:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;
+    background:linear-gradient(180deg,#FF9A4D,var(--orange) 50%,#DA5D00);
+    box-shadow:0 1px 0 rgba(255,255,255,.45) inset,0 -3px 0 rgba(150,60,0,.55) inset,0 10px 26px var(--glow);
+    transition:transform .12s,box-shadow .25s;
+}
+.btn-cyber-submit:hover{transform:translateY(-2px);box-shadow:0 1px 0 rgba(255,255,255,.45) inset,0 -3px 0 rgba(150,60,0,.55) inset,0 14px 34px var(--glow);}
+.btn-cyber-submit:active{transform:translateY(2px);}
+
+.error-msg{color:var(--danger);font-size:12.5px;margin-top:14px;display:none;font-weight:700;padding:10px;background:var(--danger-bg);border-radius:8px;border:1px solid rgba(255,90,77,.3);}
+
+.login-live-status{
+    position:absolute;top:22px;right:24px;color:var(--text-mut);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:right;z-index:4;
+    background:rgba(14,10,6,.6);padding:8px 14px;border-radius:9px;border:1px solid var(--border);backdrop-filter:blur(8px);
+}
+.login-live-status .live-value{color:var(--success);font-weight:bold;animation:blink 1.5s infinite;}
+@keyframes blink{50%{opacity:.2;}}
+
+/* ─── MAP MARKERS ─── */
+.hub-marker{position:relative;width:54px;height:66px;display:flex;flex-direction:column;align-items:center;}
+.hub-badge{
+    width:50px;height:50px;border-radius:50%;background:#fff;
+    display:flex;align-items:center;justify-content:center;
+    border:3px solid var(--orange);
+    box-shadow:0 0 0 4px rgba(255,107,0,.25),0 8px 18px rgba(0,0,0,.55),0 0 22px var(--glow);
+    overflow:hidden;
+}
+.hub-badge img{width:34px;height:34px;object-fit:contain;display:block;}
+.hub-tip{width:0;height:0;margin-top:-2px;border-left:8px solid transparent;border-right:8px solid transparent;border-top:12px solid var(--orange);filter:drop-shadow(0 4px 4px rgba(0,0,0,.4));}
+.cimahi-hub-marker{animation:hubFloat 3s ease-in-out infinite alternate;}
+@keyframes hubFloat{0%{transform:translateY(0);}100%{transform:translateY(-4px);}}
+
+.courier-iot-icon{position:relative;width:50px;height:62px;display:flex;justify-content:center;align-items:center;animation:bounce .6s infinite alternate ease-in-out;}
+.courier-body-graphic{width:26px;height:26px;background-color:var(--orange);border:2.5px solid #fff;border-radius:50%;box-shadow:0 4px 14px var(--glow);position:relative;z-index:2;}
+.courier-body-graphic::after{content:'📦';position:absolute;top:-4px;left:-16px;font-size:16px;z-index:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));}
+.courier-body-graphic::before{content:'';position:absolute;top:-7px;left:2px;width:16px;height:7px;background-color:#1A120B;border-radius:5px 5px 0 0;}
+.courier-pulse{position:absolute;top:6px;width:30px;height:30px;border-radius:50%;z-index:0;}
+.courier-iot-icon.is-online .courier-pulse{background:rgba(52,211,153,.35);animation:courierPing 1.6s ease-out infinite;}
+.courier-iot-icon.is-offline .courier-pulse{background:rgba(255,90,77,.28);}
+.courier-iot-icon.is-offline .courier-body-graphic{background-color:#7A6452;box-shadow:0 4px 12px rgba(0,0,0,.5);}
+.courier-status-badge{
+    position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);
+    font-size:8.5px;font-weight:800;letter-spacing:.6px;padding:2px 7px;border-radius:6px;white-space:nowrap;z-index:3;color:#fff;
+    box-shadow:0 3px 8px rgba(0,0,0,.5);
+}
+.courier-iot-icon.is-online .courier-status-badge{background:#10B981;border:1px solid #34D399;}
+.courier-iot-icon.is-offline .courier-status-badge{background:#C8372B;border:1px solid #FF5A4D;}
+@keyframes courierPing{0%{transform:scale(.6);opacity:.8;}100%{transform:scale(2.1);opacity:0;}}
+@keyframes bounce{0%{transform:translateY(0);}100%{transform:translateY(-6px);}}
+.custom-courier-marker-holder,.cimahi-hub-marker{background:transparent;border:none;}
+
+/* ─── LEAFLET POPUP ─── */
+.leaflet-popup-content-wrapper{background:rgba(20,14,9,.95);color:var(--text);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.6);border:1px solid var(--border);backdrop-filter:blur(10px);}
+.leaflet-popup-tip{background:rgba(20,14,9,.95);}
+.leaflet-popup-content{margin:13px 15px;}
+.leaflet-container a.leaflet-popup-close-button{color:var(--text-faint);}
+</style>
+</head>
+<body>
+
+<div class="amb-orb o1"></div>
+<div class="amb-orb o2"></div>
+
+<header>
+    <div class="logo-section">
+        <div class="logo-badge">
+            <img class="pos-logo-img" src="{{ url_for('static', filename='logo_pos.png') }}" alt="Logo Pos Indonesia">
+        </div>
+        <div class="brand-title">
+            <h1>POS INDONESIA</h1>
+            <p>Postal Command Center — Admin</p>
+        </div>
+    </div>
+    <div class="system-status">
+        <div class="admin-crown-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm2 3a1 1 0 0 0 1 1h8a1 1 0 0 0 0-2H8a1 1 0 0 0-1 1z"/></svg>
+            Panel Admin
+        </div>
+        <div id="digital-clock">00:00:00</div>
+        <div class="status-indicator"><div class="status-dot"></div><span>NODE AMAN AKTIF</span></div>
+        <button id="logout-btn" class="btn-logout" onclick="adminLogout()" style="display:none;">Keluar</button>
+    </div>
+</header>
+
+<div class="main-container" id="interaction-container">
+    <div id="map"></div>
+
+    <button class="toggle-sidebar-btn" onclick="toggleSidebar()" title="Buka/Tutup Panel">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+
+    <div id="panel">
+        <!-- NAV RADAR -->
+        <div class="section-title">Navigasi Radar Peta</div>
+        <div class="radar-nav-grid">
+            <button class="btn-nav-radar btn-nav-hub" onclick="focusOnCimahiHub()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                Fokus Hub Utama
+            </button>
+            <button class="btn-nav-radar btn-nav-realtime" onclick="focusOnRealtimeCourier()">
+                <div class="ping-marker-shell"><div class="ping-radar-wave"></div><div class="ping-radar-core"></div></div>
+                Fokus Live Kurir
+            </button>
+        </div>
+
+        <!-- TELEMETRI CARDS -->
+        <div class="card">
+            <div class="label">ID Node Perangkat</div>
+            <div class="value value-glow" id="ui-id" style="font-family:'JetBrains Mono',monospace;">{{ current_telemetry.device_id if current_telemetry else 'NODE-HV-PENDING' }}</div>
+        </div>
+        <div class="card">
+            <div class="label">Status Koneksi</div>
+            <div class="value" id="ui-status" style="color:var(--danger);font-size:18px;">{{ current_telemetry.status if current_telemetry else 'OFFLINE' }}</div>
+        </div>
+        <div class="card">
+            <div class="label">Telemetri Kecepatan</div>
+            <div class="value">
+                <span id="ui-speed" class="value-glow" style="font-size:26px;">0</span>
+                <span style="font-size:13px;color:var(--text-mut);font-weight:500;">km/jam</span>
+            </div>
+        </div>
+        <div class="card" id="card-koordinat">
+            <div class="label">Koordinat GPS Paket</div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:2px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:10px;color:var(--text-faint);font-weight:700;width:26px;flex-shrink:0;">LAT</span>
+                    <span id="ui-coord-lat" style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--orange-lt);letter-spacing:.5px;">—</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:10px;color:var(--text-faint);font-weight:700;width:26px;flex-shrink:0;">LNG</span>
+                    <span id="ui-coord-lng" style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--orange-lt);letter-spacing:.5px;">—</span>
+                </div>
+                <div style="margin-top:4px;padding-top:8px;border-top:1px solid rgba(255,107,0,.12);">
+                    <a id="ui-maps-link" href="#" target="_blank" rel="noopener"
+                       style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--success);text-decoration:none;opacity:.5;pointer-events:none;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        Buka di Google Maps
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN TOOLS (muncul setelah login) -->
+        <div id="admin-tools" style="display:none;">
+            <div class="cyber-tabs">
+                <button id="tab-reg" class="tab-btn active" onclick="switchTab('reg')">Registrasi Node</button>
+                <button id="tab-monitor" class="tab-btn" onclick="switchTab('monitor')">Pemantauan</button>
+            </div>
+
+            <!-- TAB: REGISTRASI -->
+            <div id="content-reg" class="tab-content active">
+                <div class="section-title">Pendaftaran Node Baru</div>
+                <div class="card">
+                    <div class="form-group-grid">
+                        <div class="form-field"><label for="reg-cust-name">Nama Customer</label><input id="reg-cust-name" placeholder="Nama lengkap"></div>
+                        <div class="form-field"><label for="reg-cust-phone">No. Telepon</label><input id="reg-cust-phone" placeholder="08XXXXXXXXXX"></div>
+                        <div class="form-field full-width"><label for="reg-address">Alamat Tujuan</label><input id="reg-address" placeholder="Detail alamat pengiriman"></div>
+                        <div class="form-field"><label for="reg-item-type">Jenis Muatan</label><input id="reg-item-type" placeholder="Contoh: Logam Mulia"></div>
+                        <div class="form-field"><label for="reg-item-value">Nilai Barang</label><input id="reg-item-value" placeholder="Rp 0" onkeyup="formatRupiahEventHandler(this)"></div>
+                        <div class="form-field full-width">
+                            <label for="reg-courier">Metode Pengiriman</label>
+                            <select id="reg-courier">
+                                <option value="" disabled selected hidden>Pilih otoritas kurir</option>
+                                <option value="Kurir Regular">Kurir Regular (Standar Segel)</option>
+                                <option value="Kurir High-Value Specialist">Kurir High-Value Specialist (Armada Kawal)</option>
+                                <option value="Sistem Pengantaran Khusus">Sistem Pengantaran Khusus (Brankas Aktif)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="generateQR()">⚙️ Terbitkan QR & OTP Pelacakan</button>
+                </div>
+
+                <!-- QR VAULT (muncul setelah generate) -->
+                <div id="qr-container" class="qr-vault" style="display:none;">
+                    <div class="stamp-otp">
+                        <span class="otp-cap">Kode OTP Akses Pelanggan</span>
+                        <strong id="display-otp-value">-</strong>
+                    </div>
+                    <div id="qrcode"></div>
+                    <p id="qr-link-display"></p>
+
+                    <!-- URL Portal User -->
+                    <div class="user-url-badge">
+                        <span class="url-label">🔗 URL Portal Pelacakan User</span>
+                        <span class="url-value" id="user-portal-url-display">—</span>
+                    </div>
+
+                    <button class="btn-copy-user-url" onclick="copyUserUrl()">📋 Salin Link Portal Pelacakan User</button>
+                    <button class="btn-download-qr" onclick="downloadQR()">⬇️ Unduh Kode QR</button>
+                </div>
+            </div>
+
+            <!-- TAB: MONITOR -->
+            <div id="content-monitor" class="tab-content">
+                <div class="section-title">Sesi Pelanggan Aktif</div>
+                <div class="card monitor-card">
+                    <div class="label" style="color:var(--success);">Pelanggan terhubung saat ini</div>
+                    <table class="detail-table" style="margin-top:8px;">
+                        <tr><td>Nama Customer</td><td id="monitor-cust-name">{{ active_manifest_admin.cust_name if active_manifest_admin else 'Belum Ada' }}</td></tr>
+                        <tr><td>Kode OTP</td><td id="monitor-otp-token" style="color:var(--success);font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:3px;">{{ active_manifest_admin.otp_token if active_manifest_admin and active_manifest_admin.otp_token else '-' }}</td></tr>
+                        <tr><td>ID Perangkat IoT</td><td id="monitor-device-id" style="color:var(--orange-lt);font-family:'JetBrains Mono',monospace;">{{ active_manifest_admin.device_id if active_manifest_admin else '-' }}</td></tr>
+                    </table>
+                    <div class="monitor-sub">
+                        <span class="label" style="color:var(--orange-lt);">Data pengiriman</span>
+                        <table class="detail-table" style="font-size:12px;">
+                            <tr><td>No. Telepon</td><td id="monitor-cust-phone">{{ active_manifest_admin.cust_phone if active_manifest_admin else '-' }}</td></tr>
+                            <tr><td>Alamat Tujuan</td><td id="monitor-address" style="font-size:11px;">{{ active_manifest_admin.address if active_manifest_admin else '-' }}</td></tr>
+                            <tr><td>Jenis Muatan</td><td id="monitor-item-type" style="color:var(--orange-lt);">{{ active_manifest_admin.item_type if active_manifest_admin else '-' }}</td></tr>
+                            <tr><td>Nilai Barang</td><td id="monitor-item-value" style="color:var(--success);">{{ active_manifest_admin.item_value if active_manifest_admin else 'Rp 0' }}</td></tr>
+                            <tr><td>Metode Otoritas</td><td id="monitor-courier" style="font-size:11px;">{{ active_manifest_admin.courier if active_manifest_admin else '-' }}</td></tr>
+                        </table>
+                    </div>
+                    <div class="monitor-sub">
+                        <span class="label" style="color:var(--text-mut);">Telemetri berlangsung</span>
+                        <table class="detail-table" style="font-size:11px;">
+                            <tr><td>Koordinat Lat</td><td id="monitor-live-lat">-</td></tr>
+                            <tr><td>Koordinat Lng</td><td id="monitor-live-lng">-</td></tr>
+                            <tr><td>Kecepatan</td><td id="monitor-live-speed" style="font-family:'JetBrains Mono',monospace;color:var(--orange-lt);font-weight:bold;">0 km/jam</td></tr>
+                            <tr><td>Foto Bukti</td><td id="monitor-evidence" style="color:var(--success);font-weight:700;">0 foto</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <button class="btn-danger-action" onclick="selesaikanPelacakanNode()">🚨 Hentikan & Arsipkan ke Riwayat</button>
+
+                <div class="section-title" style="margin-top:25px;">Arsip Riwayat Pelacakan</div>
+                <div id="history-box-container">
+                    <div class="card" style="text-align:center;padding:15px;color:var(--text-faint);font-size:12px;">Memuat log arsip...</div>
+                </div>
+            </div>
+        </div>
+        <!-- END ADMIN TOOLS -->
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- LOGIN SCREEN: ADMIN ONLY (single panel)                -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="login-screen">
+    <div class="scene-orb a"></div>
+    <div class="scene-orb b"></div>
+    <div class="horizon-glow"></div>
+    <div class="grid-floor"></div>
+
+    <div class="login-live-status">
+        WAKTU SISTEM: <span class="live-value" id="cyber-live-clock">00:00:00</span><br>
+        STATUS NODE: <span class="live-value">AMAN AKTIF</span>
+    </div>
+
+    <div class="gateway-container-single">
+        <div class="login-box-premium">
+            <div class="login-logo-holder"><img src="{{ url_for('static', filename='logo_pos.png') }}" alt="Logo Pos Indonesia"></div>
+            <h2>PANEL KONTROL ADMIN</h2>
+            <p class="login-tagline">Sistem Manajemen Kargo Berharga<br>PT Pos Indonesia (Persero)</p>
+            <div class="access-restricted-badge">Akses Terbatas — Petugas Terotorisasi</div>
+
+            <div class="cyber-input-wrapper">
+                <input type="password" id="admin-code" class="input-cyber-style" placeholder="Masukkan kode admin" autocomplete="off" onkeydown="if(event.key==='Enter')adminLogin()">
+                <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </div>
+            <button class="btn-cyber-submit" onclick="adminLogin()">
+                MASUK COMMAND CENTER
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+            <div id="err" class="error-msg">⚠️ Otorisasi ditolak — kode admin tidak valid</div>
+
+            <p style="margin-top:24px;font-size:11px;color:var(--text-faint);">
+                Halaman ini khusus petugas Pos Indonesia.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let isServerAdminLogged = "{{ is_admin_logged }}" === "True";
+let generatedOtpCache = "";
+let generatedUserUrl = "";
+let map, trackingMarker = null, radarCircle = null;
+let courierOnline = null;
+let lastCourierCoordsCache = null;
+const socket = io();
+
+const LOCKED_CIMAHI_COORDS = [-6.885874, 107.538179];
+const LOGO_URL = "{{ url_for('static', filename='logo_pos.png') }}";
+
+function buildCourierIcon(online){
+    const cls = online ? 'is-online' : 'is-offline';
+    const label = online ? 'ONLINE' : 'OFFLINE';
+    return L.divIcon({
+        html:`<div class="courier-iot-icon ${cls}">
+                <div class="courier-pulse"></div>
+                <div class="courier-body-graphic"></div>
+                <div class="courier-status-badge">${label}</div>
+              </div>`,
+        className:'custom-courier-marker-holder',
+        iconSize:[50,62], iconAnchor:[25,62], popupAnchor:[0,-62]
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function(){
+    map = L.map('map', {zoomControl:false}).setView(LOCKED_CIMAHI_COORDS, 17);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CartoDB'}).addTo(map);
+    L.control.zoom({position:'bottomleft'}).addTo(map);
+
+    const cimahiHubIcon = L.divIcon({
+        html:`<div class="hub-marker"><div class="hub-badge"><img src="${LOGO_URL}" alt="Pos Indonesia"></div><div class="hub-tip"></div></div>`,
+        className:'cimahi-hub-marker', iconSize:[54,66], iconAnchor:[27,66], popupAnchor:[0,-66]
+    });
+    L.marker(LOCKED_CIMAHI_COORDS, {icon:cimahiHubIcon}).addTo(map).bindPopup(`
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;color:#FBF3EA;padding:2px;min-width:200px;">
+            <strong style="color:#FF9A4D;font-size:13px;display:block;margin-bottom:4px;">📦 Kantor Pos Cimahi (Hub Utama)</strong>
+            <p style="font-size:11px;margin:0;color:#B59C86;line-height:1.4;">Jl. Gatot Subroto No.1, Baros, Cimahi Tengah, Kota Cimahi, Jawa Barat 40521</p>
+            <span style="display:inline-block;margin-top:6px;padding:2px 8px;background:rgba(52,211,153,.15);color:#34D399;font-size:10px;font-weight:700;border-radius:4px;border:1px solid rgba(52,211,153,.3);">Base Station Hub Aktif</span>
+        </div>`).openPopup();
+
+    if(isServerAdminLogged){
+        document.getElementById("login-screen").style.display="none";
+        document.getElementById("admin-tools").style.display="block";
+        document.getElementById("logout-btn").style.display="block";
+        let activeOtp = "{{ active_manifest_admin.otp_token if active_manifest_admin else '' }}";
+        if(activeOtp && activeOtp !== "None"){ switchTab('monitor'); }
+        fetchHistory();
+    }
+    setTimeout(()=>{ map.invalidateSize(); }, 300);
+});
+
+setInterval(()=>{
+    const t = new Date().toTimeString().split(' ')[0];
+    document.getElementById('digital-clock').innerText = t;
+    if(document.getElementById('cyber-live-clock')) document.getElementById('cyber-live-clock').innerText = t + " WIB";
+}, 1000);
+
+function focusOnCimahiHub(){ map && map.flyTo(LOCKED_CIMAHI_COORDS, 17, {animate:true, duration:1.2}); }
+function focusOnRealtimeCourier(){
+    if(map && lastCourierCoordsCache){
+        map.flyTo(lastCourierCoordsCache, 17, {animate:true, duration:1.2});
+        if(trackingMarker) trackingMarker.openPopup();
+    } else {
+        alert("Sinyal Real-Time Belum Aktif: Menunggu koordinat dari alat IoT.");
+    }
+}
+
+function switchTab(tabName){
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    if(tabName==='reg'){
+        document.getElementById('tab-reg').classList.add('active');
+        document.getElementById('content-reg').classList.add('active');
+    } else if(tabName==='monitor'){
+        document.getElementById('tab-monitor').classList.add('active');
+        document.getElementById('content-monitor').classList.add('active');
+        fetchHistory();
+    }
+}
+
+async function adminLogin(){
+    let code = document.getElementById("admin-code").value;
+    try{
+        const resp = await fetch('/api/admin-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
+        const res = await resp.json();
+        if(res.status==="success"){
+            isServerAdminLogged = true;
+            document.getElementById("login-screen").style.display="none";
+            document.getElementById("admin-tools").style.display="block";
+            document.getElementById("logout-btn").style.display="block";
+            if(res.manifest && res.manifest.otp_token){
+                populateMonitor(res.manifest);
+                if(res.telemetry && res.telemetry.last_seen!==0) triggerMapMarkerUpdate(res.telemetry);
+                switchTab('monitor');
+            }
+            fetchHistory();
+            setTimeout(()=>{ map.invalidateSize(); },100);
+        } else { showAdminError(); }
+    } catch(e){ showAdminError(); }
+}
+
+function showAdminError(){
+    const err = document.getElementById("err");
+    err.style.display="block";
+    const box = document.querySelector('.login-box-premium');
+    box.style.transform='translateY(-4px) scale(.98)';
+    setTimeout(()=>box.style.transform='',120);
+}
+
+function populateMonitor(manifest){
+    document.getElementById("monitor-cust-name").innerText = manifest.cust_name || '-';
+    document.getElementById("monitor-otp-token").innerText = manifest.otp_token || '-';
+    document.getElementById("monitor-device-id").innerText = manifest.device_id || '-';
+    document.getElementById("monitor-cust-phone").innerText = manifest.cust_phone || '-';
+    document.getElementById("monitor-address").innerText = manifest.address || '-';
+    document.getElementById("monitor-item-type").innerText = manifest.item_type || '-';
+    document.getElementById("monitor-item-value").innerText = manifest.item_value || 'Rp 0';
+    document.getElementById("monitor-courier").innerText = manifest.courier || '-';
+}
+
+async function adminLogout(){ await fetch('/api/admin-logout',{method:'POST'}); location.reload(); }
+
+function toggleSidebar(){
+    document.getElementById("interaction-container").classList.toggle("panel-closed");
+    setTimeout(()=>{ map.invalidateSize({animate:true}); }, 400);
+}
+
+function triggerMapMarkerUpdate(data){
+    const currentPos=[data.lat,data.lng];
+    lastCourierCoordsCache = currentPos;
+    const online = (data.status||'').toUpperCase().includes('ONLINE');
+    const statusColor = online ? '#34D399':'#FF5A4D';
+    const ringColor = online ? '#FF6B00':'#6B5544';
+    const statusText = online ? 'ONLINE — GPS Lock':'OFFLINE — Sinyal hilang';
+
+    const popupContent=`
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;color:#FBF3EA;padding:2px;min-width:200px;">
+            <strong style="color:#FF9A4D;font-size:12px;display:block;margin-bottom:6px;">🚴 Kurir Secure Node (On-Duty)</strong>
+            <span style="display:inline-block;margin-bottom:7px;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:800;background:${online?'rgba(52,211,153,.15)':'rgba(255,90,77,.15)'};color:${statusColor};border:1px solid ${online?'rgba(52,211,153,.35)':'rgba(255,90,77,.35)'};">● ${statusText}</span>
+            <table style="font-size:11px;width:100%;color:#B59C86;">
+                <tr><td style="padding:3px 0;">ID Node:</td><td style="font-family:monospace;font-weight:700;color:#fff;">${data.device_id}</td></tr>
+                <tr><td style="padding:3px 0;">Koordinat:</td><td style="font-family:monospace;color:#FF9A4D;font-weight:700;">[${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}]</td></tr>
+                <tr><td style="padding:3px 0;">Kecepatan:</td><td style="font-weight:700;color:#34D399;">${data.speed} km/jam</td></tr>
+            </table>
+        </div>`;
+
+    if(!trackingMarker){
+        trackingMarker = L.marker(currentPos,{icon:buildCourierIcon(online)}).addTo(map).bindPopup(popupContent).openPopup();
+        radarCircle = L.circle(currentPos,{radius:120,color:ringColor,weight:1.5,fillColor:ringColor,fillOpacity:.2}).addTo(map);
+        courierOnline = online;
+        animateRadarCircle();
+    } else {
+        trackingMarker.setLatLng(currentPos).setPopupContent(popupContent);
+        if(courierOnline!==online){ trackingMarker.setIcon(buildCourierIcon(online)); courierOnline=online; }
+        if(radarCircle){ radarCircle.setLatLng(currentPos); radarCircle.setStyle({color:ringColor,fillColor:ringColor}); }
+    }
+}
+
+const _val=(v,fb)=>(v===undefined||v===null||v==="") ? fb : v;
+
+socket.on('ui_refresh',(data)=>{
+    const status = _val(data.status,"Menunggu Sinkronisasi…");
+    document.getElementById("ui-id").innerText = _val(data.device_id,"—");
+    document.getElementById("ui-status").innerText = status;
+    document.getElementById("ui-speed").innerText = _val(data.speed,"0");
+
+    // Update kartu koordinat GPS
+    if(data.lat && data.lng && data.last_seen !== 0){
+        const latVal = data.lat.toFixed(6);
+        const lngVal = data.lng.toFixed(6);
+        const latEl  = document.getElementById("ui-coord-lat");
+        const lngEl  = document.getElementById("ui-coord-lng");
+        const mapsEl = document.getElementById("ui-maps-link");
+        if(latEl) latEl.innerText = latVal + "°";
+        if(lngEl) lngEl.innerText = lngVal + "°";
+        if(mapsEl){
+            mapsEl.href = `https://www.google.com/maps?q=${latVal},${lngVal}`;
+            mapsEl.style.opacity = "1";
+            mapsEl.style.pointerEvents = "auto";
+        }
+    } else {
+        const latEl = document.getElementById("ui-coord-lat");
+        const lngEl = document.getElementById("ui-coord-lng");
+        const mapsEl = document.getElementById("ui-maps-link");
+        if(latEl) latEl.innerText = "—";
+        if(lngEl) lngEl.innerText = "—";
+        if(mapsEl){ mapsEl.style.opacity = "0.4"; mapsEl.style.pointerEvents = "none"; mapsEl.href = "#"; }
+    }
+
+    if(document.getElementById("monitor-live-lat")) document.getElementById("monitor-live-lat").innerText=data.lat?data.lat.toFixed(6):"-";
+    if(document.getElementById("monitor-live-lng")) document.getElementById("monitor-live-lng").innerText=data.lng?data.lng.toFixed(6):"-";
+    if(document.getElementById("monitor-live-speed")) document.getElementById("monitor-live-speed").innerText=_val(data.speed,"0")+" km/jam";
+    document.getElementById("ui-status").style.color = status.includes("ONLINE") ? "#34D399":"#FF5A4D";
+    if(data.last_seen===0){
+        if(trackingMarker){map.removeLayer(trackingMarker);trackingMarker=null;}
+        if(radarCircle){map.removeLayer(radarCircle);radarCircle=null;}
+        courierOnline=null;lastCourierCoordsCache=null;return;
+    }
+    triggerMapMarkerUpdate(data);
+});
+
+socket.on('evidence_update',(data)=>{
+    const mev = document.getElementById('monitor-evidence');
+    if(mev) mev.innerText = `${(data.photos||[]).length} foto`;
+});
+
+function animateRadarCircle(){
+    let r=100,op=.25;
+    let id=setInterval(()=>{
+        if(radarCircle&&map&&map.hasLayer(radarCircle)){
+            r+=20;op-=.015;
+            if(r>450){r=100;op=.25;}
+            radarCircle.setRadius(r);radarCircle.setStyle({fillOpacity:op,opacity:op*2});
+        } else { clearInterval(id); }
+    },60);
+}
+
+function formatRupiahEventHandler(el){
+    let v=el.value.replace(/[^,\d]/g,'');
+    let sp=v.split(','); let sisa=sp[0].length%3;
+    let rp=sp[0].substr(0,sisa);
+    let rb=sp[0].substr(sisa).match(/\d{3}/gi);
+    if(rb){let sep=sisa?'.':'';rp+=sep+rb.join('.');}
+    rp=sp[1]!==undefined?rp+','+sp[1]:rp;
+    el.value=v?'Rp '+rp:'';
+}
+
+async function generateQR(){
+    const custName = document.getElementById("reg-cust-name").value;
+    const custPhone = document.getElementById("reg-cust-phone").value;
+    const address = document.getElementById("reg-address").value;
+    const itemType = document.getElementById("reg-item-type").value;
+    const itemValue = document.getElementById("reg-item-value").value;
+    const courier = document.getElementById("reg-courier").value;
+
+    if(!custName||!custPhone||!address||!itemType||!itemValue||!courier){
+        alert("Harap lengkapi semua data pendaftaran node!");return;
+    }
+
+    const resp = await fetch('/api/generate-token',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({cust_name:custName,cust_phone:custPhone,address,item_type:itemType,item_value:itemValue,courier})});
+    const result = await resp.json();
+
+    generatedOtpCache = result.otp;
+
+    // Bangun URL portal user langsung dari browser — tidak bergantung pada response server
+    // Ini memastikan URL selalu valid meski result.user_url undefined
+    // URL sudah berisi token random dari server, misal: /track/abc123xyz/verify
+    generatedUserUrl = result.user_url;
+
+    document.getElementById("display-otp-value").innerText = result.otp;
+    document.getElementById("user-portal-url-display").innerText = generatedUserUrl;
+
+    // Populate monitor tab
+    populateMonitor({
+        cust_name:custName, otp_token:result.otp, device_id:result.device_id,
+        cust_phone:custPhone, address, item_type:itemType, item_value:itemValue, courier
+    });
+
+    document.getElementById("qr-container").style.display='block';
+    document.getElementById("qrcode").innerHTML="";
+
+    // Generate QR code dengan URL yang sudah pasti valid
+    new QRCode(document.getElementById("qrcode"), {
+        text: generatedUserUrl,
+        width: 180,
+        height: 180,
+        colorDark: "#1a0e07",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
+    document.getElementById("qr-link-display").innerText = generatedUserUrl;
+}
+
+function copyUserUrl(){
+    if(!generatedUserUrl){ alert("Belum ada URL yang dibuat."); return; }
+    navigator.clipboard.writeText(generatedUserUrl).then(()=>{
+        const btn = document.querySelector('.btn-copy-user-url');
+        btn.textContent = '✅ Tersalin!';
+        setTimeout(()=>btn.textContent='📋 Salin Link Portal Pelacakan User', 2000);
+    });
+}
+
+function downloadQR(){
+    let canvas = document.querySelector('#qrcode canvas');
+    let link = document.createElement('a');
+    link.download = `Tracking_QR_OTP_[${generatedOtpCache}].png`;
+    link.href = canvas.toDataURL();
+    link.click();
+}
+
+async function selesaikanPelacakanNode(){
+    if(confirm("Yakin ingin menghentikan pelacakan dan menyimpan ke riwayat? User tidak dapat melacak lagi.")){
+        const resp = await fetch('/api/selesaikan-pelacakan',{method:'POST'});
+        const res = await resp.json();
+        alert(res.message);
+        location.reload();
+    }
+}
+
+async function fetchHistory(){
+    const container = document.getElementById("history-box-container");
+    if(!container) return;
+    try{
+        const response = await fetch('/api/history');
+        if(!response.ok) return;
+        const data = await response.json();
+        if(data.length===0){
+            container.innerHTML=`<div class="card" style="text-align:center;padding:20px;border-style:dashed;">
+                <span style="font-size:20px;opacity:.5;">📁</span>
+                <p style="font-size:12px;color:var(--text-mut);margin-top:5px;">Belum ada riwayat pelacakan yang diarsipkan.</p>
+            </div>`;return;
+        }
+        container.innerHTML=data.reverse().map(item=>{
+            const statusAman=(!item.safety_summary.benturan&&!item.safety_summary.pemaksaan_buka)
+                ?`<span style="color:var(--success);font-size:11px;">🟢 Aman</span>`
+                :`<span style="color:var(--danger);font-size:11px;">⚠️ Gangguan</span>`;
+            return `<div class="card" style="padding:14px;gap:6px;border-color:rgba(255,255,255,.08);">
+                <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,107,0,.15);padding-bottom:6px;">
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--orange-lt);font-weight:bold;">${item.device_id}</span>
+                    <div style="display:flex;gap:12px;align-items:center;">
+                        <a href="/download-invoice/${item.device_id}" style="color:var(--success);font-size:11px;font-weight:bold;text-decoration:none;" title="Unduh Laporan Pengiriman PDF">📄 LAPORAN PDF</a>
+                        <button onclick="deleteHistoryItem('${item.device_id}')" style="background:transparent;border:none;color:var(--danger);font-size:11px;font-weight:bold;cursor:pointer;">HAPUS</button>
+                    </div>
+                </div>
+                <table class="detail-table" style="font-size:11.5px;margin-top:4px;">
+                    <tr><td>Customer</td><td>${item.cust_name}</td></tr>
+                    <tr><td>Muatan</td><td>${item.item_type} (${item.item_value})</td></tr>
+                    <tr><td>Waktu Mulai</td><td>${item.started_at}</td></tr>
+                    <tr><td>Waktu Selesai</td><td>${item.ended_at}</td></tr>
+                    <tr><td>Status</td><td>${statusAman} (${item.total_photos} Foto)</td></tr>
+                </table>
+            </div>`;
+        }).join('');
+    } catch(e){
+        container.innerHTML=`<div class="card" style="color:var(--danger);text-align:center;font-size:11px;">Gagal memuat log riwayat.</div>`;
+    }
+}
+
+async function deleteHistoryItem(deviceId){
+    if(confirm(`Hapus permanen arsip ${deviceId}? Tidak dapat dibatalkan.`)){
+        const response = await fetch(`/api/history/${deviceId}`,{method:'DELETE'});
+        const res = await response.json();
+        if(res.status==="success") fetchHistory();
+        else alert("Gagal menghapus.");
+    }
+}
+</script>
+</body>
+</html>

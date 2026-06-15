@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pelacakan Paket — Pos Indonesia</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+    --orange:#FF6B00;
+    --orange-lt:#FF9A4D;
+    --glow:rgba(255,107,0,.45);
+    --glow-soft:rgba(255,107,0,.18);
+    --bg-0:#0A0704;
+    --panel:rgba(20,14,9,.82);
+    --card-grad:linear-gradient(155deg,rgba(34,24,15,.92),rgba(18,13,8,.94));
+    --border:rgba(255,107,0,.20);
+    --border-lit:rgba(255,154,77,.45);
+    --text:#FBF3EA;
+    --text-mut:#B59C86;
+    --text-faint:#7E6E5E;
+    --success:#34D399;
+    --success-bg:rgba(52,211,153,.12);
+    --danger:#FF5A4D;
+    --danger-bg:rgba(255,90,77,.12);
+    --depth:
+        0 1px 0 rgba(255,255,255,.06) inset,
+        0 -2px 0 rgba(0,0,0,.45) inset,
+        0 2px 6px rgba(0,0,0,.5),
+        0 16px 38px rgba(0,0,0,.55);
+}
+
+*{box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;margin:0;padding:0;}
+
+body{
+    background:
+        radial-gradient(130% 90% at 12% -10%,#25140A 0%,transparent 46%),
+        radial-gradient(120% 90% at 100% 0%,#1C1107 0%,transparent 50%),
+        var(--bg-0);
+    color:var(--text);
+    height:100vh;display:flex;flex-direction:column;overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+}
+
+/* Ambient orbs */
+.amb-orb{position:fixed;border-radius:50%;filter:blur(70px);z-index:0;pointer-events:none;opacity:.5;}
+.amb-orb.o1{width:520px;height:520px;background:radial-gradient(circle,rgba(255,107,0,.28),transparent 70%);top:-160px;left:-120px;animation:orbFloat 11s ease-in-out infinite alternate;}
+.amb-orb.o2{width:420px;height:420px;background:radial-gradient(circle,rgba(52,211,153,.14),transparent 70%);bottom:-140px;right:-80px;animation:orbFloat 14s ease-in-out infinite alternate-reverse;}
+@keyframes orbFloat{0%{transform:translate(-20px,-15px) scale(1);}100%{transform:translate(30px,25px) scale(1.12);}}
+
+/* ─── HEADER ─── */
+header{
+    background:linear-gradient(180deg,rgba(22,15,9,.92),rgba(12,9,5,.88));
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border);
+    box-shadow:0 6px 30px rgba(0,0,0,.5),0 1px 0 rgba(255,154,77,.18) inset;
+    padding:0 26px;display:flex;justify-content:space-between;align-items:center;
+    z-index:1000;height:72px;position:relative;overflow:hidden;flex-shrink:0;
+}
+header::before{
+    content:'';position:absolute;left:0;right:0;bottom:0;height:2px;
+    background:linear-gradient(90deg,transparent,var(--orange),var(--orange-lt),var(--orange),transparent);
+    background-size:200% 100%;animation:ticker 5s linear infinite;
+}
+@keyframes ticker{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+.logo-section{display:flex;align-items:center;gap:14px;z-index:2;}
+.logo-badge{background:#fff;padding:5px 12px;border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 1px rgba(255,255,255,.15),0 8px 22px rgba(0,0,0,.5),0 0 20px rgba(255,107,0,.18);}
+.pos-logo-img{height:36px;display:block;}
+.brand-title h1{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#fff;}
+.brand-title p{font-size:10px;color:var(--orange-lt);font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-top:2px;}
+
+.header-right{display:flex;align-items:center;gap:12px;z-index:2;}
+#digital-clock{color:var(--text-mut)!important;font-family:'JetBrains Mono',monospace!important;font-size:14px!important;font-weight:700!important;}
+
+.pkg-live-badge{
+    display:flex;align-items:center;gap:8px;
+    background:var(--success-bg);border:1px solid rgba(52,211,153,.35);
+    padding:7px 14px;border-radius:8px;color:var(--success);font-size:11px;font-weight:800;letter-spacing:.5px;
+}
+.live-dot{width:7px;height:7px;background:var(--success);border-radius:50%;box-shadow:0 0 10px var(--success);animation:pulse 1.5s infinite alternate;}
+@keyframes pulse{0%{transform:scale(.7);opacity:.6;}100%{transform:scale(1.2);opacity:1;}}
+
+.btn-end-track{
+    background:rgba(255,90,77,.08);border:1px solid rgba(255,90,77,.4);color:#FF8B82;
+    padding:7px 14px;font-size:11px;font-weight:700;border-radius:8px;cursor:pointer;
+    text-transform:uppercase;letter-spacing:.4px;transition:all .2s;
+}
+.btn-end-track:hover{background:var(--danger);color:#fff;box-shadow:0 0 18px rgba(255,90,77,.4);}
+
+/* ─── MAIN ─── */
+.main-container{display:flex;flex:1;position:relative;height:calc(100vh - 72px);overflow:hidden;z-index:1;}
+#map{flex:1;height:100%;width:100%;background:#0A0704;}
+
+/* ─── SIDE PANEL ─── */
+#panel{
+    width:400px;height:100%;
+    background:var(--panel);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+    border-left:1px solid var(--border);
+    padding:20px;overflow-y:auto;z-index:999;
+    box-shadow:-18px 0 50px rgba(0,0,0,.6),1px 0 0 rgba(255,154,77,.12) inset;
+    display:flex;flex-direction:column;gap:14px;
+    transition:transform .4s cubic-bezier(.25,1,.5,1);
+    position:relative;flex-shrink:0;
+}
+#panel::before{
+    content:'';position:absolute;inset:0;pointer-events:none;z-index:-1;opacity:.4;
+    background-image:linear-gradient(rgba(255,107,0,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,107,0,.05) 1px,transparent 1px);
+    background-size:38px 38px;
+    mask:radial-gradient(120% 80% at 70% 0%,#000 0%,transparent 75%);
+}
+.panel-closed #panel{transform:translateX(400px);}
+
+.toggle-btn{
+    position:absolute;top:20px;right:400px;width:32px;height:50px;
+    background:linear-gradient(180deg,#1C140C,#120D07);border:1px solid var(--border);border-right:none;
+    border-radius:10px 0 0 10px;cursor:pointer;z-index:1000;display:flex;align-items:center;justify-content:center;
+    color:var(--orange-lt);box-shadow:-6px 6px 18px rgba(0,0,0,.5);transition:right .4s cubic-bezier(.25,1,.5,1);outline:none;
+}
+.panel-closed .toggle-btn{right:0;border-right:1px solid var(--border);}
+.toggle-btn svg{transition:transform .4s;}
+.panel-closed .toggle-btn svg{transform:rotate(180deg);}
+#panel::-webkit-scrollbar{width:5px;}
+#panel::-webkit-scrollbar-thumb{background:rgba(255,107,0,.3);border-radius:3px;}
+
+/* ─── SECTION TITLES ─── */
+.section-title{
+    font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--orange-lt);display:flex;align-items:center;gap:8px;margin-top:4px;
+}
+.section-title::before{content:'';width:14px;height:2px;background:var(--orange);border-radius:2px;box-shadow:0 0 8px var(--orange);}
+.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+
+/* ─── CARDS ─── */
+.card{
+    background:var(--card-grad);border:1px solid var(--border);border-top:1px solid var(--border-lit);
+    padding:14px 18px;border-radius:14px;box-shadow:var(--depth);
+    display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;
+}
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:40%;border-radius:14px 14px 0 0;background:linear-gradient(180deg,rgba(255,255,255,.04),transparent);pointer-events:none;}
+.card>*{position:relative;z-index:1;}
+
+.label{font-size:10px;color:var(--text-mut);text-transform:uppercase;font-weight:800;letter-spacing:1px;margin-bottom:1px;}
+.value{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#fff;line-height:1.3;word-break:break-word;}
+.value-glow{color:var(--orange-lt);text-shadow:0 0 14px var(--glow);}
+.value-sm{font-size:13px!important;font-weight:600!important;}
+
+/* Package banner */
+.pkg-banner{
+    background:linear-gradient(135deg,rgba(255,107,0,.18),rgba(194,65,12,.12));
+    border:1px solid rgba(255,107,0,.35);padding:14px 16px;border-radius:12px;
+    text-align:center;position:relative;overflow:hidden;
+}
+.pkg-banner::before{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,154,77,.12),transparent);transform:skewX(-18deg);animation:sweep 4s ease-in-out infinite;}
+@keyframes sweep{0%{left:-60%;}55%{left:140%;}100%{left:140%;}}
+.pkg-banner .pkg-icon{font-size:28px;display:block;margin-bottom:6px;}
+.pkg-banner .pkg-name{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:var(--orange-lt);text-shadow:0 0 12px var(--glow);}
+.pkg-banner .pkg-sub{font-size:11px;color:var(--text-mut);margin-top:3px;}
+
+/* Speed gauge */
+.speed-row{display:flex;align-items:flex-end;gap:6px;}
+.speed-num{font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:700;color:var(--orange-lt);text-shadow:0 0 18px var(--glow);line-height:1;}
+.speed-unit{font-size:12px;color:var(--text-mut);font-weight:600;padding-bottom:4px;}
+
+/* Nav buttons */
+.nav-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn-nav{
+    display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 12px;
+    font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.4px;
+    border-radius:9px;cursor:pointer;transition:all .22s;outline:none;
+}
+.btn-nav-hub{background:linear-gradient(180deg,rgba(30,41,59,.8),rgba(15,23,42,.9));border:1px solid rgba(255,154,77,.22);box-shadow:0 4px 12px rgba(0,0,0,.4);}
+.btn-nav-hub:hover{border-color:var(--orange);box-shadow:0 0 14px var(--glow-soft);transform:translateY(-1px);}
+.btn-nav-live{background:linear-gradient(180deg,rgba(255,107,0,.14),rgba(18,13,8,.8));border:1px solid var(--border);box-shadow:0 4px 14px var(--glow-soft);}
+.btn-nav-live:hover{background:linear-gradient(180deg,#FF8A3D,var(--orange) 60%,#E25E00);border-color:var(--orange-lt);box-shadow:0 0 18px var(--glow);transform:translateY(-1px);}
+.btn-nav:active{transform:translateY(1px);}
+
+.ping-shell{position:relative;display:flex;width:8px;height:8px;}
+.ping-core{position:absolute;inset:0;background:var(--success);border-radius:50%;}
+.ping-wave{position:absolute;inset:0;background:var(--success);border-radius:50%;animation:pingWave 1.4s ease-out infinite;opacity:.75;}
+@keyframes pingWave{100%{transform:scale(2.4);opacity:0;}}
+
+/* Detail table */
+.detail-table{width:100%;border-collapse:collapse;}
+.detail-table td{padding:8px 0;border-bottom:1px solid rgba(255,154,77,.07);font-size:12px;color:#E9DECF;vertical-align:top;}
+.detail-table tr:last-child td{border-bottom:none;}
+.detail-table td:first-child{color:var(--text-mut);font-weight:500;width:45%;}
+.detail-table td:last-child{font-weight:700;text-align:right;color:#fff;padding-left:10px;word-break:break-word;}
+
+/* Alert boxes */
+.alert-box{padding:11px 13px;border-radius:9px;font-size:12px;font-weight:700;display:flex;flex-direction:column;gap:2px;border:1px solid transparent;box-shadow:0 4px 14px rgba(0,0,0,.25);}
+.alert-danger{background:var(--danger-bg);border-color:rgba(255,90,77,.3);color:#FF8B82;}
+.alert-success{background:var(--success-bg);border-color:rgba(52,211,153,.28);color:var(--success);}
+
+/* Photo grid */
+.photo-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:2px;}
+.photo-grid img{width:100%;height:95px;object-fit:cover;border-radius:9px;border:1px solid rgba(255,154,77,.15);box-shadow:0 4px 12px rgba(0,0,0,.5);transition:transform .22s;}
+.photo-grid img:hover{transform:scale(1.04);}
+.photo-grid img:first-child{grid-column:span 2;height:140px;}
+
+/* Invoice button */
+.btn-invoice{
+    width:100%;padding:13px;border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.4px;
+    background:linear-gradient(180deg,#3BD68F,#10B981 55%,#0A9468);
+    box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 -2px 0 rgba(6,80,55,.5) inset,0 8px 20px rgba(16,185,129,.28);
+    transition:transform .12s,box-shadow .2s;margin-top:10px;
+}
+.btn-invoice:hover{transform:translateY(-2px);}
+
+/* Evidence empty */
+.evidence-empty{text-align:center;padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;}
+
+/* ─── MAP MARKERS ─── */
+.hub-marker{position:relative;width:50px;height:62px;display:flex;flex-direction:column;align-items:center;}
+.hub-badge{width:46px;height:46px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;border:3px solid var(--orange);box-shadow:0 0 0 4px rgba(255,107,0,.22),0 6px 16px rgba(0,0,0,.5),0 0 20px var(--glow);overflow:hidden;}
+.hub-badge img{width:30px;height:30px;object-fit:contain;}
+.hub-tip{width:0;height:0;margin-top:-2px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:11px solid var(--orange);filter:drop-shadow(0 3px 3px rgba(0,0,0,.4));}
+.cimahi-hub-marker{animation:hubFloat 3s ease-in-out infinite alternate;}
+@keyframes hubFloat{0%{transform:translateY(0);}100%{transform:translateY(-4px);}}
+
+.courier-iot-icon{position:relative;width:50px;height:62px;display:flex;justify-content:center;align-items:center;animation:bounce .6s infinite alternate ease-in-out;}
+.courier-body-graphic{width:26px;height:26px;background-color:var(--orange);border:2.5px solid #fff;border-radius:50%;box-shadow:0 4px 14px var(--glow);position:relative;z-index:2;}
+.courier-body-graphic::after{content:'📦';position:absolute;top:-4px;left:-16px;font-size:16px;z-index:1;}
+.courier-body-graphic::before{content:'';position:absolute;top:-7px;left:2px;width:16px;height:7px;background-color:#1A120B;border-radius:5px 5px 0 0;}
+.courier-pulse{position:absolute;top:6px;width:30px;height:30px;border-radius:50%;z-index:0;}
+.courier-iot-icon.is-online .courier-pulse{background:rgba(52,211,153,.35);animation:courierPing 1.6s ease-out infinite;}
+.courier-iot-icon.is-offline .courier-pulse{background:rgba(255,90,77,.28);}
+.courier-iot-icon.is-offline .courier-body-graphic{background-color:#7A6452;}
+.courier-status-badge{position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:6px;white-space:nowrap;z-index:3;color:#fff;}
+.courier-iot-icon.is-online .courier-status-badge{background:#10B981;border:1px solid #34D399;}
+.courier-iot-icon.is-offline .courier-status-badge{background:#C8372B;border:1px solid #FF5A4D;}
+@keyframes courierPing{0%{transform:scale(.6);opacity:.8;}100%{transform:scale(2.1);opacity:0;}}
+@keyframes bounce{0%{transform:translateY(0);}100%{transform:translateY(-6px);}}
+.custom-courier-marker,.cimahi-hub-marker{background:transparent;border:none;}
+
+/* ─── ENDED OVERLAY ─── */
+#ended-overlay{
+    position:fixed;inset:0;z-index:9999;
+    background:rgba(8,5,3,.92);
+    backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    display:flex;align-items:center;justify-content:center;
+    animation:overlayIn .5s ease;
+}
+@keyframes overlayIn{from{opacity:0;}to{opacity:1;}}
+
+#ended-card{
+    max-width:420px;width:90%;
+    background:linear-gradient(155deg,rgba(34,24,15,.95),rgba(18,13,8,.97));
+    border:1px solid rgba(52,211,153,.35);border-top:1px solid rgba(52,211,153,.6);
+    border-radius:22px;padding:44px 36px;text-align:center;
+    box-shadow:
+        0 1px 0 rgba(255,255,255,.06) inset,
+        0 30px 80px rgba(0,0,0,.8),
+        0 0 60px rgba(52,211,153,.08);
+    animation:cardIn .6s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes cardIn{from{transform:translateY(30px) scale(.95);opacity:0;}to{transform:none;opacity:1;}}
+
+#ended-icon{
+    font-size:56px;margin-bottom:18px;display:block;
+    animation:iconPop .7s cubic-bezier(.34,1.56,.64,1) .15s both;
+}
+@keyframes iconPop{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
+
+#ended-title{
+    font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;
+    color:#fff;margin-bottom:12px;text-shadow:0 0 20px rgba(52,211,153,.25);
+}
+#ended-msg{
+    font-size:14px;color:var(--text-mut);line-height:1.7;margin-bottom:16px;
+}
+#ended-time{
+    display:inline-block;
+    background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);
+    color:var(--success);font-family:'JetBrains Mono',monospace;
+    font-size:12px;font-weight:700;padding:6px 16px;border-radius:20px;
+    margin-bottom:20px;
+}
+#ended-divider{
+    height:1px;background:linear-gradient(90deg,transparent,rgba(255,107,0,.2),transparent);
+    margin:20px 0;
+}
+#ended-sub{
+    font-size:12px;color:var(--text-faint);line-height:1.6;margin-bottom:24px;
+}
+#ended-invoice-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    background:linear-gradient(180deg,#3BD68F,#10B981 55%,#0A9468);
+    color:#fff;font-size:13px;font-weight:700;text-decoration:none;
+    padding:13px 24px;border-radius:11px;letter-spacing:.4px;
+    box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 -2px 0 rgba(6,80,55,.5) inset,0 8px 24px rgba(16,185,129,.3);
+    transition:transform .15s;
+}
+#ended-invoice-btn:hover{transform:translateY(-2px);}
+#ended-footer{
+    margin-top:24px;font-size:10px;color:var(--text-faint);letter-spacing:.5px;
+}
+
+/* Leaflet popup */
+.leaflet-popup-content-wrapper{background:rgba(20,14,9,.95);color:var(--text);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.6);border:1px solid var(--border);backdrop-filter:blur(10px);}
+.leaflet-popup-tip{background:rgba(20,14,9,.95);}
+.leaflet-popup-content{margin:12px 14px;}
+.leaflet-container a.leaflet-popup-close-button{color:var(--text-faint);}
+</style>
+</head>
+<body>
+
+<div class="amb-orb o1"></div>
+<div class="amb-orb o2"></div>
+
+<!-- HEADER -->
+<header>
+    <div class="logo-section">
+        <div class="logo-badge">
+            <img class="pos-logo-img" src="{{ url_for('static', filename='logo_pos.png') }}" alt="Pos Indonesia">
+        </div>
+        <div class="brand-title">
+            <h1>POS INDONESIA</h1>
+            <p>Pelacakan Paket Real-Time</p>
+        </div>
+    </div>
+    <div class="header-right">
+        <div id="digital-clock">00:00:00</div>
+        <div class="pkg-live-badge">
+            <div class="live-dot"></div>
+            LIVE TRACKING
+        </div>
+        <button class="btn-end-track" onclick="endTracking()">✕ Akhiri</button>
+    </div>
+</header>
+
+<div class="main-container" id="main-wrap">
+    <div id="map"></div>
+
+    <button class="toggle-btn" onclick="togglePanel()" title="Buka/Tutup Panel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+
+    <div id="panel">
+
+        <!-- PAKET BANNER -->
+        <div class="pkg-banner">
+            <span class="pkg-icon">📦</span>
+            <div class="pkg-name">{{ package_name }}</div>
+            <div class="pkg-sub">Dalam pengiriman aktif</div>
+        </div>
+
+        <!-- NAVIGASI PETA -->
+        <div class="section-title">Navigasi Peta</div>
+        <div class="nav-grid">
+            <button class="btn-nav btn-nav-hub" onclick="focusHub()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Hub Utama
+            </button>
+            <button class="btn-nav btn-nav-live" onclick="focusCourier()">
+                <div class="ping-shell"><div class="ping-wave"></div><div class="ping-core"></div></div>
+                Kurir Saya
+            </button>
+        </div>
+
+        <!-- STATUS REAL-TIME -->
+        <div class="section-title">Status Real-Time</div>
+        <div class="card">
+            <div class="label">Status Koneksi</div>
+            <div class="value value-sm" id="ui-status" style="color:var(--danger);">
+                {{ current_telemetry.status if current_telemetry else 'OFFLINE' }}
+            </div>
+        </div>
+        <div class="card">
+            <div class="label">Kecepatan Kurir</div>
+            <div class="speed-row">
+                <span class="speed-num" id="ui-speed">0</span>
+                <span class="speed-unit">km/jam</span>
+            </div>
+        </div>
+
+        <!-- KOORDINAT GPS REAL-TIME -->
+        <div class="card">
+            <div class="label">Koordinat GPS Paket</div>
+            <div style="display:flex;flex-direction:column;gap:7px;margin-top:2px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:10px;color:var(--text-faint);font-weight:700;width:26px;flex-shrink:0;">LAT</span>
+                    <span id="ui-coord-lat" style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--orange-lt);letter-spacing:.5px;">—</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:10px;color:var(--text-faint);font-weight:700;width:26px;flex-shrink:0;">LNG</span>
+                    <span id="ui-coord-lng" style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--orange-lt);letter-spacing:.5px;">—</span>
+                </div>
+                <div style="margin-top:4px;padding-top:8px;border-top:1px solid rgba(255,107,0,.12);">
+                    <a id="ui-maps-link" href="#" target="_blank" rel="noopener"
+                       style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--success);text-decoration:none;opacity:.4;pointer-events:none;transition:opacity .2s;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        Buka di Google Maps
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="label">ID Node Perangkat</div>
+            <div class="value value-glow" id="ui-id" style="font-family:'JetBrains Mono',monospace;font-size:14px;">
+                {{ current_telemetry.device_id if current_telemetry else '—' }}
+            </div>
+        </div>
+
+        <!-- SENSOR DATA IOT -->
+        <div class="section-title">Data Sensor IoT</div>
+        <div class="card">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div>
+                    <div class="label">Baterai Alat</div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span id="ui-battery" style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--success);">—</span>
+                        <span style="font-size:11px;color:var(--text-mut);">%</span>
+                    </div>
+                    <div id="ui-battery-bar" style="height:4px;background:rgba(255,107,0,.15);border-radius:2px;margin-top:6px;overflow:hidden;">
+                        <div id="ui-battery-fill" style="height:100%;width:0%;background:var(--success);border-radius:2px;transition:width .5s;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="label">Suhu Sensor</div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                        <span id="ui-temp" style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--orange-lt);">—</span>
+                        <span style="font-size:11px;color:var(--text-mut);">°C</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="label">Tilt Roll</div>
+                    <div style="display:flex;align-items:center;gap:4px;margin-top:4px;">
+                        <span id="ui-roll" style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--text);">—</span>
+                        <span style="font-size:10px;color:var(--text-mut);">°</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="label">Tilt Pitch</div>
+                    <div style="display:flex;align-items:center;gap:4px;margin-top:4px;">
+                        <span id="ui-pitch" style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--text);">—</span>
+                        <span style="font-size:10px;color:var(--text-mut);">°</span>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,107,0,.1);display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <span style="font-size:10px;color:var(--text-faint);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Status Benturan</span>
+                    <div id="ui-shock" style="font-size:12px;font-weight:700;color:var(--success);margin-top:3px;">✔ NONE</div>
+                </div>
+                <div style="text-align:right;">
+                    <span style="font-size:10px;color:var(--text-faint);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Satelit GPS</span>
+                    <div id="ui-sats" style="font-size:12px;font-weight:700;color:var(--text-mut);margin-top:3px;">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MANIFEST PENGIRIMAN -->
+        <div class="section-title">Detail Pengiriman</div>
+        <div class="card">
+            <table class="detail-table">
+                <tr><td>Nama Penerima</td><td>{{ cust_name }}</td></tr>
+                <tr><td>No. Telepon</td><td>{{ cust_phone }}</td></tr>
+                <tr><td>Alamat Tujuan</td><td>{{ address }}</td></tr>
+                <tr><td>Jenis Barang</td><td style="color:var(--orange-lt);">{{ item_type }}</td></tr>
+                <tr><td>Nilai Barang</td><td style="color:var(--success);">{{ item_value }}</td></tr>
+                <tr><td>Layanan Kurir</td><td>{{ courier }}</td></tr>
+            </table>
+            <button class="btn-invoice" onclick="window.location.href='/download-invoice'">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                📄 Unduh Laporan Pengiriman
+            </button>
+        </div>
+
+        <!-- KEAMANAN ENCLOSURE -->
+        <div class="section-title">Status Keamanan Paket</div>
+        {% if safety and safety.benturan %}
+        <div class="alert-box alert-danger">
+            <span>⚠️ Terdeteksi Benturan Kritis!</span>
+            <span style="font-size:10px;font-weight:500;margin-top:2px;">Waktu: {{ safety.waktu_kejadian }}</span>
+        </div>
+        {% else %}
+        <div class="alert-box alert-success"><span>✅ Struktur paket stabil & aman</span></div>
+        {% endif %}
+
+        {% if safety and safety.pemaksaan_buka %}
+        <div class="alert-box alert-danger"><span>🚨 Terdeteksi pembukaan paksa!</span></div>
+        {% else %}
+        <div class="alert-box alert-success"><span>✅ Segel enclosure terkunci otentik</span></div>
+        {% endif %}
+
+        <!-- BUKTI VISUAL -->
+        <div class="section-title">Bukti Kondisi Paket</div>
+
+        {% if photos %}
+        <div id="evidence-banner" class="alert-box alert-danger">
+            <span>📸 {{ photos|length }} foto kondisi terkirim</span>
+            <span style="font-size:10px;font-weight:500;">Pemicu: {{ evidence_meta.trigger if evidence_meta else 'event' }} • {{ evidence_meta.time if evidence_meta else '-' }}</span>
+        </div>
+        {% else %}
+        <div id="evidence-banner" class="alert-box alert-danger" style="display:none;"></div>
+        {% endif %}
+
+        <div class="photo-grid" id="evidence-grid">
+            {% for photo in photos %}
+            <img src="{{ photo }}" alt="Bukti kondisi {{ loop.index }}">
+            {% endfor %}
+        </div>
+
+        {% if photos %}
+        <div id="evidence-empty" class="card evidence-empty" style="display:none;">
+        {% else %}
+        <div id="evidence-empty" class="card evidence-empty">
+        {% endif %}
+            <span style="font-size:24px;">📷</span>
+            <span style="font-size:12px;color:var(--text-mut);font-weight:600;">Belum ada foto kondisi</span>
+            <span style="font-size:11px;color:var(--text-faint);text-align:center;line-height:1.5;">Foto otomatis dikirim saat sensor benturan atau pembukaan paksa terpicu.</span>
+        </div>
+
+    </div><!-- end #panel -->
+</div><!-- end .main-container -->
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- OVERLAY: PELACAKAN BERAKHIR (muncul otomatis)   -->
+<!-- ═══════════════════════════════════════════════ -->
+<div id="ended-overlay" style="display:none;">
+    <div id="ended-card">
+        <div id="ended-icon">✅</div>
+        <h2 id="ended-title">Pelacakan Selesai</h2>
+        <p id="ended-msg">Paket Anda telah berhasil dikirim.<br>Terima kasih telah menggunakan layanan Pos Indonesia.</p>
+        <div id="ended-time"></div>
+        <div id="ended-divider"></div>
+        <p id="ended-sub">Sesi pelacakan ini telah diakhiri oleh petugas. Laporan data pengiriman Anda tersedia untuk diunduh.</p>
+        <a id="ended-invoice-btn" href="/download-invoice">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            📄 Unduh Laporan Pengiriman
+        </a>
+        <div id="ended-footer">© 2026 PT Pos Indonesia (Persero)</div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const socket = io();
+let map, trackingMarker = null, radarCircle = null;
+let courierOnline = null;
+let lastCourierCoords = null;
+
+const HUB_COORDS = [-6.885874, 107.538179];
+const LOGO_URL   = "{{ url_for('static', filename='logo_pos.png') }}";
+
+// ─── Clock ───
+setInterval(()=>{
+    document.getElementById('digital-clock').innerText = new Date().toTimeString().split(' ')[0];
+}, 1000);
+
+// ─── Toggle panel ───
+function togglePanel(){
+    document.getElementById('main-wrap').classList.toggle('panel-closed');
+    setTimeout(()=>map.invalidateSize({animate:true}), 400);
+}
+
+// ─── Map init ───
+document.addEventListener('DOMContentLoaded', ()=>{
+    map = L.map('map', {zoomControl:false}).setView(HUB_COORDS, 16);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png',
+        {attribution:'&copy; OpenStreetMap &copy; CartoDB'}).addTo(map);
+    L.control.zoom({position:'bottomleft'}).addTo(map);
+
+    // Hub marker
+    const hubIcon = L.divIcon({
+        html:`<div class="hub-marker">
+                <div class="hub-badge"><img src="${LOGO_URL}" alt="Pos"></div>
+                <div class="hub-tip"></div>
+              </div>`,
+        className:'cimahi-hub-marker', iconSize:[50,62], iconAnchor:[25,62], popupAnchor:[0,-62]
+    });
+    L.marker(HUB_COORDS, {icon:hubIcon}).addTo(map).bindPopup(`
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;color:#FBF3EA;padding:2px;min-width:190px;">
+            <strong style="color:#FF9A4D;font-size:12px;display:block;margin-bottom:4px;">📦 Kantor Pos Cimahi (Hub)</strong>
+            <p style="font-size:11px;margin:0;color:#B59C86;line-height:1.4;">Jl. Gatot Subroto No.1, Cimahi Tengah</p>
+            <span style="display:inline-block;margin-top:5px;padding:2px 7px;background:rgba(52,211,153,.15);color:#34D399;font-size:10px;font-weight:700;border-radius:4px;border:1px solid rgba(52,211,153,.3);">Base Station Aktif</span>
+        </div>`);
+    setTimeout(()=>map.invalidateSize(), 300);
+});
+
+// ─── Build courier icon ───
+function buildCourierIcon(online){
+    const cls   = online ? 'is-online' : 'is-offline';
+    const label = online ? 'ONLINE'    : 'OFFLINE';
+    return L.divIcon({
+        html:`<div class="courier-iot-icon ${cls}">
+                <div class="courier-pulse"></div>
+                <div class="courier-body-graphic"></div>
+                <div class="courier-status-badge">${label}</div>
+              </div>`,
+        className:'custom-courier-marker', iconSize:[50,62], iconAnchor:[25,62], popupAnchor:[0,-62]
+    });
+}
+
+// ─── Update map marker ───
+function updateMarker(data){
+    const pos    = [data.lat, data.lng];
+    lastCourierCoords = pos;
+    const online = (data.status||'').toUpperCase().includes('ONLINE');
+    const ringColor  = online ? '#FF6B00' : '#6B5544';
+    const statusClr  = online ? '#34D399'  : '#FF5A4D';
+    const statusTxt  = online ? 'ONLINE — GPS Lock' : 'OFFLINE';
+
+    const popup = `
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;color:#FBF3EA;padding:2px;min-width:190px;">
+            <strong style="color:#FF9A4D;font-size:12px;display:block;margin-bottom:5px;">🚴 Kurir Anda (On-Duty)</strong>
+            <span style="display:inline-block;margin-bottom:6px;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:800;
+                background:${online?'rgba(52,211,153,.15)':'rgba(255,90,77,.15)'};color:${statusClr};
+                border:1px solid ${online?'rgba(52,211,153,.35)':'rgba(255,90,77,.35)'};">● ${statusTxt}</span>
+            <table style="font-size:11px;width:100%;color:#B59C86;">
+                <tr><td style="padding:2px 0;">Koordinat:</td><td style="font-family:monospace;color:#FF9A4D;font-weight:700;">[${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}]</td></tr>
+                <tr><td style="padding:2px 0;">Kecepatan:</td><td style="font-weight:700;color:#34D399;">${data.speed} km/jam</td></tr>
+            </table>
+        </div>`;
+
+    if(!trackingMarker){
+        trackingMarker = L.marker(pos, {icon:buildCourierIcon(online)}).addTo(map).bindPopup(popup).openPopup();
+        radarCircle    = L.circle(pos, {radius:120, color:ringColor, weight:1.5, fillColor:ringColor, fillOpacity:.2}).addTo(map);
+        courierOnline  = online;
+        animateRadar();
+        // Auto-zoom ke kurir saat pertama kali sinyal masuk
+        map.flyTo(pos, 17, {animate:true, duration:1.5});
+    } else {
+        trackingMarker.setLatLng(pos).setPopupContent(popup);
+        if(courierOnline !== online){
+            trackingMarker.setIcon(buildCourierIcon(online));
+            courierOnline = online;
+        }
+        if(radarCircle){ radarCircle.setLatLng(pos); radarCircle.setStyle({color:ringColor, fillColor:ringColor}); }
+    }
+}
+
+// ─── Socket events ───
+const _v = (v, fb) => (v===undefined||v===null||v==='') ? fb : v;
+
+socket.on('ui_refresh', data=>{
+    const status = _v(data.status, 'Menunggu sinyal…');
+    document.getElementById('ui-id').innerText     = _v(data.device_id, '—');
+    document.getElementById('ui-status').innerText = status;
+    document.getElementById('ui-speed').innerText  = _v(data.speed, '0');
+    document.getElementById('ui-status').style.color = status.includes('ONLINE') ? '#34D399' : '#FF5A4D';
+
+    // Update koordinat GPS real-time
+    const latEl  = document.getElementById('ui-coord-lat');
+    const lngEl  = document.getElementById('ui-coord-lng');
+    const mapsEl = document.getElementById('ui-maps-link');
+
+    if(data.lat && data.lng && data.last_seen !== 0){
+        const latStr = parseFloat(data.lat).toFixed(6);
+        const lngStr = parseFloat(data.lng).toFixed(6);
+        if(latEl)  latEl.innerText  = latStr + '°';
+        if(lngEl)  lngEl.innerText  = lngStr + '°';
+        if(mapsEl){
+            mapsEl.href = `https://www.google.com/maps?q=${latStr},${lngStr}`;
+            mapsEl.style.opacity      = '1';
+            mapsEl.style.pointerEvents = 'auto';
+        }
+    } else {
+        if(latEl)  latEl.innerText  = '—';
+        if(lngEl)  lngEl.innerText  = '—';
+        if(mapsEl){
+            mapsEl.href = '#';
+            mapsEl.style.opacity      = '0.4';
+            mapsEl.style.pointerEvents = 'none';
+        }
+    }
+
+    // ── Update data sensor IoT ──
+    const battEl   = document.getElementById('ui-battery');
+    const battFill = document.getElementById('ui-battery-fill');
+    const tempEl   = document.getElementById('ui-temp');
+    const rollEl   = document.getElementById('ui-roll');
+    const pitchEl  = document.getElementById('ui-pitch');
+    const shockEl  = document.getElementById('ui-shock');
+    const satsEl   = document.getElementById('ui-sats');
+
+    if(data.battery !== undefined && data.battery !== '-'){
+        const bpct = parseInt(data.battery) || 0;
+        if(battEl)   battEl.innerText = bpct;
+        if(battFill){
+            battFill.style.width = bpct + '%';
+            battFill.style.background = bpct > 50 ? 'var(--success)' : bpct > 20 ? '#F59E0B' : 'var(--danger)';
+        }
+    }
+    if(data.temp_c !== undefined && tempEl)
+        tempEl.innerText = typeof data.temp_c === 'number' ? data.temp_c.toFixed(1) : data.temp_c;
+    if(data.tilt_roll !== undefined && rollEl)
+        rollEl.innerText = typeof data.tilt_roll === 'number' ? data.tilt_roll.toFixed(1) : data.tilt_roll;
+    if(data.tilt_pitch !== undefined && pitchEl)
+        pitchEl.innerText = typeof data.tilt_pitch === 'number' ? data.tilt_pitch.toFixed(1) : data.tilt_pitch;
+    if(data.shock !== undefined && shockEl){
+        const shockOk = (!data.shock || data.shock === 'NONE' || data.shock === '-');
+        shockEl.innerText = shockOk ? '✔ NONE' : '⚠ ' + data.shock;
+        shockEl.style.color = shockOk ? 'var(--success)' : 'var(--danger)';
+    }
+    if(data.sats !== undefined && satsEl)
+        satsEl.innerText = data.sats !== 'N/A' ? data.sats + ' satelit' : 'Mencari...';
+
+    if(data.last_seen === 0){
+        if(trackingMarker){ map.removeLayer(trackingMarker); trackingMarker=null; }
+        if(radarCircle)   { map.removeLayer(radarCircle);   radarCircle=null;    }
+        courierOnline=null; lastCourierCoords=null; return;
+    }
+    updateMarker(data);
+});
+
+socket.on('evidence_update', data=>{
+    const photos  = data.photos || [];
+    const cb      = Date.now();
+    const grid    = document.getElementById('evidence-grid');
+    const empty   = document.getElementById('evidence-empty');
+    const banner  = document.getElementById('evidence-banner');
+
+    if(grid) grid.innerHTML = photos.map((p,i)=>`<img src="${p}?t=${cb}" alt="Bukti ${i+1}">`).join('');
+    if(empty)  empty.style.display  = photos.length ? 'none' : 'flex';
+    if(banner){
+        if(photos.length){
+            banner.style.display = 'flex';
+            banner.innerHTML = `<span>📸 ${data.count||photos.length} foto kondisi terkirim</span>
+                <span style="font-size:10px;font-weight:500;">Pemicu: ${data.trigger||'event'} • ${data.time||'-'}</span>`;
+        } else { banner.style.display='none'; }
+    }
+});
+
+// ─── Radar animation ───
+function animateRadar(){
+    let r=100, op=.25;
+    const id = setInterval(()=>{
+        if(radarCircle && map && map.hasLayer(radarCircle)){
+            r+=20; op-=.015;
+            if(r>450){ r=100; op=.25; }
+            radarCircle.setRadius(r);
+            radarCircle.setStyle({fillOpacity:op, opacity:op*2});
+        } else { clearInterval(id); }
+    }, 60);
+}
+
+// ─── Nav buttons ───
+function focusHub(){ map && map.flyTo(HUB_COORDS, 17, {animate:true, duration:1.2}); }
+function focusCourier(){
+    if(map && lastCourierCoords){
+        map.flyTo(lastCourierCoords, 17, {animate:true, duration:1.2});
+        if(trackingMarker) trackingMarker.openPopup();
+    } else {
+        alert('Sinyal kurir belum aktif. Tunggu sebentar ya!');
+    }
+}
+
+// ─── Tracking ended by admin (auto overlay) ───
+socket.on('tracking_ended', data => {
+    const overlay    = document.getElementById('ended-overlay');
+    const timeEl     = document.getElementById('ended-time');
+    const invoiceBtn = document.getElementById('ended-invoice-btn');
+
+    if(timeEl) timeEl.innerText = '📅 Selesai: ' + (data.ended_at || '-');
+
+    // Arahkan tombol unduh laporan ke arsip history menggunakan device_id
+    if(invoiceBtn && data.device_id) {
+        invoiceBtn.href = '/download-invoice/' + data.device_id;
+    }
+
+    if(overlay) overlay.style.display = 'flex';
+
+    // Hapus session user di background
+    fetch('/api/user-logout', {method:'POST'}).catch(()=>{});
+});
+
+// ─── End tracking ───
+async function endTracking(){
+    if(confirm('Akhiri sesi pelacakan paket ini?')){
+        await fetch('/api/user-logout', {method:'POST'});
+        // Ambil token dari URL: /track/<token> -> kembali ke /track/<token>/verify
+        const pathParts = window.location.pathname.split('/');
+        const token = pathParts[2] || '';
+        window.location.href = token ? '/track/' + token + '/verify' : '/';
+    }
+}
+</script>
+</body>
+</html>

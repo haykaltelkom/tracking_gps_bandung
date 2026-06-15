@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verifikasi Akses Paket — Pos Indonesia</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+    --orange:#FF6B00;
+    --orange-lt:#FF9A4D;
+    --orange-dp:#C2410C;
+    --glow:rgba(255,107,0,.45);
+    --glow-soft:rgba(255,107,0,.18);
+    --bg-0:#0A0704;
+    --border:rgba(255,107,0,.20);
+    --border-lit:rgba(255,154,77,.45);
+    --text:#FBF3EA;
+    --text-mut:#B59C86;
+    --text-faint:#7E6E5E;
+    --success:#34D399;
+    --success-bg:rgba(52,211,153,.12);
+    --danger:#FF5A4D;
+    --danger-bg:rgba(255,90,77,.12);
+}
+
+*{box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;margin:0;padding:0;}
+
+body{
+    min-height:100vh;
+    background:
+        radial-gradient(110% 70% at 50% 110%, rgba(255,107,0,.20) 0%, transparent 55%),
+        radial-gradient(100% 60% at 50% -8%, #271608 0%, transparent 52%),
+        var(--bg-0);
+    color:var(--text);
+    display:flex;flex-direction:column;align-items:center;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+}
+
+/* Ambient orbs */
+.amb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;opacity:.45;}
+.amb.a{width:600px;height:600px;background:radial-gradient(circle,rgba(255,107,0,.28),transparent 70%);top:-200px;left:-180px;animation:float 12s ease-in-out infinite alternate;}
+.amb.b{width:480px;height:480px;background:radial-gradient(circle,rgba(52,211,153,.14),transparent 70%);bottom:-180px;right:-150px;animation:float 15s ease-in-out infinite alternate-reverse;}
+@keyframes float{0%{transform:translate(-20px,-15px);}100%{transform:translate(30px,25px);}}
+
+/* Grid floor perspective */
+.grid-floor{
+    position:fixed;left:-40%;right:-40%;bottom:-12%;height:72%;z-index:0;pointer-events:none;
+    background-image:linear-gradient(rgba(255,107,0,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(255,107,0,.22) 1px,transparent 1px);
+    background-size:56px 56px;
+    transform:rotateX(76deg);transform-origin:center bottom;
+    mask:linear-gradient(to top,#000 2%,transparent 65%);
+    animation:floorMove 4s linear infinite;
+    opacity:.7;
+}
+@keyframes floorMove{from{background-position:0 0;}to{background-position:0 56px;}}
+.horizon-glow{
+    position:fixed;left:0;right:0;bottom:22%;height:140px;z-index:0;pointer-events:none;
+    background:radial-gradient(60% 100% at 50% 100%, rgba(255,138,61,.35), transparent 70%);
+    filter:blur(8px);
+}
+
+/* ─── TOP BAR ─── */
+.top-bar{
+    position:sticky;top:0;z-index:100;width:100%;
+    background:linear-gradient(180deg,rgba(14,10,6,.95),rgba(10,7,4,.88));
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--border);
+    box-shadow:0 4px 24px rgba(0,0,0,.5), 0 1px 0 rgba(255,154,77,.14) inset;
+    padding:0 28px;display:flex;justify-content:space-between;align-items:center;height:68px;
+    overflow:hidden;
+}
+.top-bar::after{
+    content:'';position:absolute;left:0;right:0;bottom:0;height:2px;
+    background:linear-gradient(90deg,transparent,var(--orange),var(--orange-lt),var(--orange),transparent);
+    background-size:200% 100%;animation:ticker 5s linear infinite;
+}
+@keyframes ticker{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+.logo-group{display:flex;align-items:center;gap:12px;}
+.logo-pill{background:#fff;padding:5px 14px;border-radius:9px;box-shadow:0 6px 18px rgba(0,0,0,.45),0 0 20px rgba(255,107,0,.18);}
+.logo-pill img{height:34px;display:block;}
+.brand-info h1{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;color:#fff;}
+.brand-info p{font-size:10px;color:var(--orange-lt);font-weight:700;text-transform:uppercase;letter-spacing:1.8px;margin-top:1px;}
+
+.user-badge{
+    display:flex;align-items:center;gap:8px;
+    background:var(--success-bg);border:1px solid rgba(52,211,153,.3);
+    padding:6px 14px;border-radius:8px;color:var(--success);font-size:11px;font-weight:800;letter-spacing:.5px;
+}
+.user-badge-dot{width:7px;height:7px;background:var(--success);border-radius:50%;box-shadow:0 0 10px var(--success);animation:pulse 1.5s infinite alternate;}
+@keyframes pulse{0%{transform:scale(.7);opacity:.6;}100%{transform:scale(1.2);opacity:1;}}
+
+/* ─── MAIN CONTENT ─── */
+.page-content{
+    position:relative;z-index:2;
+    width:100%;max-width:520px;
+    padding:48px 24px 64px;
+    display:flex;flex-direction:column;align-items:center;gap:28px;
+}
+
+/* ─── HERO ─── */
+.hero{text-align:center;}
+.pkg-emoji{font-size:52px;display:block;margin-bottom:12px;filter:drop-shadow(0 4px 16px rgba(255,107,0,.4));animation:pkgFloat 3s ease-in-out infinite alternate;}
+@keyframes pkgFloat{0%{transform:translateY(0);}100%{transform:translateY(-8px);}}
+.hero h2{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;color:#fff;margin-bottom:8px;text-shadow:0 0 24px rgba(255,154,77,.2);}
+.hero p{font-size:14px;color:var(--text-mut);line-height:1.6;max-width:380px;margin:0 auto;}
+
+/* ─── OTP CARD ─── */
+.otp-card{
+    width:100%;
+    background:linear-gradient(155deg,rgba(34,24,15,.92),rgba(18,13,8,.94));
+    border:1px solid var(--border);border-top:1px solid var(--border-lit);
+    border-radius:20px;padding:30px 28px;
+    box-shadow:
+        0 1px 0 rgba(255,255,255,.06) inset,
+        0 -2px 0 rgba(0,0,0,.45) inset,
+        0 2px 6px rgba(0,0,0,.5),
+        0 20px 50px rgba(0,0,0,.6),
+        0 0 40px rgba(255,107,0,.06);
+    position:relative;overflow:hidden;
+}
+.otp-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--orange-lt),transparent);opacity:.6;
+}
+.otp-card::after{
+    content:'';position:absolute;top:0;left:0;right:0;height:44%;border-radius:20px 20px 0 0;
+    background:linear-gradient(180deg,rgba(255,255,255,.03),transparent);pointer-events:none;
+}
+
+.otp-card-header{text-align:center;margin-bottom:24px;}
+.otp-card-header .step-chip{
+    display:inline-flex;align-items:center;gap:6px;
+    background:rgba(255,107,0,.12);border:1px solid rgba(255,107,0,.3);
+    color:var(--orange-lt);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;
+    padding:4px 12px;border-radius:20px;margin-bottom:14px;
+}
+.otp-card-header h3{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;}
+.otp-card-header p{font-size:12.5px;color:var(--text-mut);}
+
+/* Input OTP — 3 boxes */
+.otp-boxes-wrapper{display:flex;align-items:center;justify-content:center;gap:12px;margin:20px 0;}
+.otp-single-box{
+    width:72px;height:80px;
+    background:rgba(10,7,4,.9);
+    border:2px solid rgba(255,107,0,.25);border-radius:12px;
+    color:#fff;font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;
+    text-align:center;text-transform:uppercase;outline:none;
+    box-shadow:0 2px 12px rgba(0,0,0,.5) inset;
+    transition:all .2s;caret-color:var(--orange);
+}
+.otp-single-box:focus{
+    border-color:var(--orange);
+    box-shadow:0 0 0 3px var(--glow-soft),0 2px 12px rgba(0,0,0,.5) inset,0 0 18px rgba(255,107,0,.15);
+}
+.otp-single-box.filled{border-color:var(--orange-lt);color:var(--orange-lt);text-shadow:0 0 14px var(--glow);}
+.otp-single-box.shake{animation:shake .35s ease;}
+@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-5px);}40%{transform:translateX(5px);}60%{transform:translateX(-4px);}80%{transform:translateX(4px);}}
+
+.otp-separator{color:var(--text-faint);font-size:20px;font-weight:300;}
+
+/* Submit button */
+.btn-track{
+    width:100%;padding:16px;border:none;color:#fff;font-size:14px;font-weight:800;
+    text-transform:uppercase;letter-spacing:.7px;border-radius:12px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:linear-gradient(180deg,#FF9A4D,var(--orange) 50%,#DA5D00);
+    box-shadow:0 1px 0 rgba(255,255,255,.45) inset,0 -3px 0 rgba(150,60,0,.55) inset,0 10px 28px var(--glow);
+    transition:transform .12s,box-shadow .2s;
+}
+.btn-track:hover{transform:translateY(-2px);box-shadow:0 1px 0 rgba(255,255,255,.45) inset,0 -3px 0 rgba(150,60,0,.55) inset,0 16px 36px var(--glow);}
+.btn-track:active{transform:translateY(2px);}
+.btn-track.loading{opacity:.7;pointer-events:none;}
+
+/* Spinner */
+.spinner{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Error state */
+.error-banner{
+    width:100%;padding:13px 16px;border-radius:10px;
+    background:var(--danger-bg);border:1px solid rgba(255,90,77,.3);
+    color:#FF8B82;font-size:13px;font-weight:700;text-align:center;
+    display:none;
+    box-shadow:0 0 20px rgba(255,90,77,.1) inset;
+}
+.error-banner.visible{display:block;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+
+/* ─── INFO CHIPS ─── */
+.info-row{display:flex;gap:10px;width:100%;}
+.info-chip{
+    flex:1;padding:12px 14px;border-radius:12px;
+    background:rgba(20,14,9,.7);border:1px solid rgba(255,107,0,.15);
+    text-align:center;font-size:11px;
+}
+.info-chip .chip-icon{font-size:18px;display:block;margin-bottom:4px;}
+.info-chip .chip-label{color:var(--text-mut);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:2px;}
+.info-chip .chip-val{color:var(--text);font-weight:700;font-size:11.5px;}
+
+/* ─── FOOTER NOTE ─── */
+.footer-note{
+    text-align:center;font-size:11.5px;color:var(--text-faint);line-height:1.6;
+    border-top:1px solid rgba(255,107,0,.12);padding-top:20px;width:100%;
+}
+.footer-note a{color:var(--orange-lt);text-decoration:none;font-weight:700;}
+.footer-note a:hover{text-decoration:underline;}
+
+/* ─── HOW IT WORKS ─── */
+.how-it-works{width:100%;display:flex;flex-direction:column;gap:10px;}
+.how-title{font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--orange-lt);display:flex;align-items:center;gap:8px;}
+.how-title::before{content:'';width:14px;height:2px;background:var(--orange);border-radius:2px;box-shadow:0 0 6px var(--orange);}
+.how-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+.how-steps{display:flex;flex-direction:column;gap:8px;}
+.how-step{
+    display:flex;align-items:flex-start;gap:12px;
+    background:rgba(14,10,6,.5);border:1px solid rgba(255,107,0,.1);
+    border-radius:10px;padding:12px 14px;
+}
+.step-num{
+    width:24px;height:24px;background:rgba(255,107,0,.15);border:1px solid rgba(255,107,0,.3);
+    border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;color:var(--orange-lt);
+}
+.step-text{font-size:12px;color:var(--text-mut);line-height:1.5;}
+.step-text strong{color:var(--text);font-weight:700;}
+</style>
+</head>
+<body>
+
+<div class="amb a"></div>
+<div class="amb b"></div>
+<div class="grid-floor"></div>
+<div class="horizon-glow"></div>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+    <div class="logo-group">
+        <div class="logo-pill"><img src="{{ url_for('static', filename='logo_pos.png') }}" alt="Pos Indonesia"></div>
+        <div class="brand-info">
+            <h1>POS INDONESIA</h1>
+            <p>Portal Pelacakan Paket</p>
+        </div>
+    </div>
+    <div class="user-badge">
+        <div class="user-badge-dot"></div>
+        Portal Pelanggan
+    </div>
+</div>
+
+<!-- MAIN PAGE CONTENT -->
+<div class="page-content">
+
+    <!-- HERO -->
+    <div class="hero">
+        {% if token_valid == True %}
+        <span class="pkg-emoji">🔐</span>
+        <h2>Verifikasi Akses</h2>
+        <p>Link pengiriman Anda valid. Masukkan kode OTP 3 karakter yang diberikan petugas untuk membuka dashboard pelacakan.</p>
+        {% elif token_valid == False %}
+        <span class="pkg-emoji">❌</span>
+        <h2>Link Tidak Valid</h2>
+        <p>Link pengiriman ini tidak ditemukan atau sudah tidak aktif. Hubungi petugas Pos Indonesia untuk bantuan.</p>
+        {% else %}
+        <span class="pkg-emoji">📦</span>
+        <h2>Scan QR untuk Melacak</h2>
+        <p>Halaman ini hanya bisa diakses melalui QR Code atau link unik yang diberikan petugas Pos Indonesia saat pendaftaran paket.</p>
+        {% endif %}
+    </div>
+
+    <!-- OTP CARD -->
+    {% if token_valid == False %}
+    <div class="otp-card" style="text-align:center;">
+        <div style="font-size:48px;margin-bottom:16px;">🚫</div>
+        <p style="color:var(--text-mut);font-size:13px;line-height:1.6;">
+            Link ini sudah tidak aktif atau sesi paket telah berakhir.<br>
+            Hubungi petugas Pos Indonesia untuk bantuan.
+        </p>
+    </div>
+    {% elif token_valid == None %}
+    <div class="otp-card" style="text-align:center;">
+        <div style="font-size:48px;margin-bottom:16px;">📲</div>
+        <p style="color:var(--text-mut);font-size:13px;line-height:1.6;">
+            Silakan scan <strong style="color:var(--orange-lt);">QR Code</strong> yang diberikan petugas,<br>
+            atau minta link pelacakan unik Anda.
+        </p>
+        <div style="margin-top:16px;padding:12px 16px;background:rgba(255,107,0,.08);border:1px solid rgba(255,107,0,.2);border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-faint);">
+            Format: <span style="color:var(--orange-lt);">domain.com/track/[kode-unik]/verify</span>
+        </div>
+    </div>
+    {% else %}
+    <div class="otp-card">
+        <!-- Token tersembunyi dari URL, dikirim saat verify -->
+        <input type="hidden" id="access-token" value="{{ token or '' }}">
+
+        <div class="otp-card-header">
+            <div class="step-chip">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                Verifikasi Akses
+            </div>
+            <h3>Masukkan Kode OTP</h3>
+            <p>3 karakter — huruf dan/atau angka<br>(diberikan petugas saat registrasi)</p>
+        </div>
+
+        <!-- 3-box OTP input -->
+        <div class="otp-boxes-wrapper">
+            <input class="otp-single-box" id="otp-0" maxlength="1" type="text" inputmode="text" autocomplete="off" onkeyup="handleOtpKey(event,0)" oninput="handleOtpInput(this,0)">
+            <input class="otp-single-box" id="otp-1" maxlength="1" type="text" inputmode="text" autocomplete="off" onkeyup="handleOtpKey(event,1)" oninput="handleOtpInput(this,1)">
+            <input class="otp-single-box" id="otp-2" maxlength="1" type="text" inputmode="text" autocomplete="off" onkeyup="handleOtpKey(event,2)" oninput="handleOtpInput(this,2)" onkeydown="if(event.key==='Enter')verifyOtp()">
+        </div>
+
+        <div id="error-banner" class="error-banner">
+            ⚠️ Kode OTP tidak valid atau sesi paket telah berakhir. Hubungi petugas.
+        </div>
+
+        <button class="btn-track" id="btn-verify" onclick="verifyOtp()">
+            <span id="btn-text">Buka Radar Pelacakan</span>
+            <span id="btn-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+        </button>
+    </div>
+
+    {% endif %}
+
+    <!-- INFO CHIPS -->
+    <div class="info-row">
+        <div class="info-chip">
+            <span class="chip-icon">🔒</span>
+            <span class="chip-label">Enkripsi</span>
+            <span class="chip-val">End-to-End</span>
+        </div>
+        <div class="info-chip">
+            <span class="chip-icon">📡</span>
+            <span class="chip-label">Update</span>
+            <span class="chip-val">Real-Time GPS</span>
+        </div>
+        <div class="info-chip">
+            <span class="chip-icon">🛡️</span>
+            <span class="chip-label">Keamanan</span>
+            <span class="chip-val">IoT Sensor</span>
+        </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="how-it-works">
+        <div class="how-title">Cara Menggunakan</div>
+        <div class="how-steps">
+            <div class="how-step">
+                <div class="step-num">1</div>
+                <div class="step-text"><strong>Terima OTP dari petugas</strong> — Kode 3 karakter diberikan saat pendaftaran paket.</div>
+            </div>
+            <div class="how-step">
+                <div class="step-num">2</div>
+                <div class="step-text"><strong>Masukkan kode di atas</strong> — Kotak-kotak akan terisi otomatis per karakter.</div>
+            </div>
+            <div class="how-step">
+                <div class="step-num">3</div>
+                <div class="step-text"><strong>Pantau paket secara real-time</strong> — Lihat posisi GPS kurir, kecepatan, dan status keamanan.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER NOTE -->
+    <div class="footer-note">
+        Petugas Pos Indonesia? <a href="/">Masuk Panel Admin →</a><br>
+        <span style="margin-top:6px;display:block;">© 2026 PT Pos Indonesia (Persero) — Layanan Kargo Berharga</span><br>
+        {% if token %}<span style="font-size:10px;color:var(--text-faint);">Sesi: {{ token[:8] }}…</span>{% endif %}
+    </div>
+
+</div>
+
+<script>
+// ─── OTP 3-BOX LOGIC ───
+const boxes = [
+    document.getElementById('otp-0'),
+    document.getElementById('otp-1'),
+    document.getElementById('otp-2'),
+];
+
+function handleOtpInput(el, idx){
+    el.value = el.value.toUpperCase();
+    if(el.value){
+        el.classList.add('filled');
+        if(idx < 2) boxes[idx+1].focus();
+    } else {
+        el.classList.remove('filled');
+    }
+    hideError();
+}
+
+function handleOtpKey(e, idx){
+    if(e.key==='Backspace' && !boxes[idx].value && idx > 0){
+        boxes[idx-1].focus();
+        boxes[idx-1].value='';
+        boxes[idx-1].classList.remove('filled');
+    }
+    // Paste support — handle pasting full OTP
+    if(e.key==='v' && (e.ctrlKey||e.metaKey)) return;
+}
+
+// Handle paste on any box
+boxes.forEach((box, idx)=>{
+    box.addEventListener('paste', (e)=>{
+        e.preventDefault();
+        const pasted = (e.clipboardData||window.clipboardData).getData('text').trim().toUpperCase();
+        const chars = pasted.replace(/[^A-Z0-9]/g,'').slice(0,3).split('');
+        chars.forEach((c,i)=>{
+            if(boxes[i]){
+                boxes[i].value=c;
+                boxes[i].classList.add('filled');
+            }
+        });
+        const nextFocus = Math.min(chars.length, 2);
+        boxes[nextFocus].focus();
+    });
+});
+
+function getOtpValue(){
+    return boxes.map(b=>b.value).join('');
+}
+
+function shakeBoxes(){
+    boxes.forEach(b=>{ b.classList.add('shake'); setTimeout(()=>b.classList.remove('shake'),400); });
+}
+
+function showError(){
+    document.getElementById('error-banner').classList.add('visible');
+    shakeBoxes();
+}
+function hideError(){
+    document.getElementById('error-banner').classList.remove('visible');
+}
+
+function setLoading(v){
+    const btn = document.getElementById('btn-verify');
+    const txt = document.getElementById('btn-text');
+    const icon = document.getElementById('btn-icon');
+    if(v){
+        btn.classList.add('loading');
+        txt.textContent = 'Memverifikasi…';
+        icon.innerHTML = '<div class="spinner"></div>';
+    } else {
+        btn.classList.remove('loading');
+        txt.textContent = 'Buka Radar Pelacakan';
+        icon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+    }
+}
+
+async function verifyOtp(){
+    const otp   = getOtpValue().trim();
+    const token = document.getElementById('access-token')
+                  ? document.getElementById('access-token').value
+                  : '';
+
+    if(otp.length < 3){ shakeBoxes(); return; }
+
+    hideError();
+    setLoading(true);
+
+    try{
+        const response = await fetch('/api/verify-otp',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            // Kirim token URL bersama OTP untuk validasi ganda
+            body:JSON.stringify({otp, token})
+        });
+        const result = await response.json();
+        if(result.status==="success"){
+            window.location.href = result.url;
+        } else {
+            setLoading(false);
+            showError();
+        }
+    } catch(e){
+        setLoading(false);
+        showError();
+    }
+}
+
+// Focus first box on load
+window.addEventListener('DOMContentLoaded',()=>{ boxes[0].focus(); });
+</script>
+</body>
+</html>
