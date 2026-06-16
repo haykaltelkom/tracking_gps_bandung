@@ -71,6 +71,9 @@ safety_status = {
     "pemaksaan_buka": False
 }
 
+current_route = []
+is_trace_started = False
+
 # ─── Konfigurasi timing Deep Sleep ───
 # Alat bangun ~30 detik tiap siklus, lalu tidur ~15 menit (900 detik)
 DEEP_SLEEP_GRACE   = 60     # Dalam 60 detik terakhir = baru kirim (ONLINE)
@@ -345,8 +348,34 @@ def on_message(client, userdata, msg):
         if event_type in OPEN_EVENTS:
             safety_status["pemaksaan_buka"] = True
 
-        # Selalu emit ke semua client — update dashboard
-        payload_emit = {**current_telemetry, **safety_status}
+        # ==========================================
+        # LOGIKA TRACING (JEJAK)
+        # ==========================================
+        global current_route, is_trace_started
+        
+        # 1. Cek apakah ini event tamper/benturan
+        is_tamper_event = (event_type in TAMPER_EVENTS) or (event_type in OPEN_EVENTS) or (shock_str not in ("NONE", "-", ""))
+        
+        # 2. Cek apakah koordinat valid dan BUKAN koordinat default hub
+        is_real_coord = False
+        if lat_val is not None and lng_val is not None:
+            if not (abs(lat_val - (-6.885874)) < 0.0001 and abs(lng_val - 107.538179) < 0.0001):
+                is_real_coord = True
+
+        # 3. Masukkan ke rute dengan syarat yang diminta
+        if is_real_coord and gps_fix:
+            if not is_trace_started:
+                # Mulai tracing HANYA jika data pertama ini BUKAN event tamper
+                if not is_tamper_event:
+                    is_trace_started = True
+                    current_route.append([lat_val, lng_val])
+            else:
+                # Jika sudah dimulai, simpan titik baru (mencegah duplikat beruntun)
+                if len(current_route) == 0 or current_route[-1] != [lat_val, lng_val]:
+                    current_route.append([lat_val, lng_val])
+
+        # Selalu emit ke semua client — update dashboard termasuk data route
+        payload_emit = {**current_telemetry, **safety_status, "route": current_route}
         socketio.emit('ui_refresh', payload_emit)
         print(f"📡 Emit → lat={lat_val} lng={lng_val} fix={gps_fix} status={status_str}")
 
@@ -709,7 +738,10 @@ def upload_evidence():
 # ==========================================================
 @app.route('/api/generate-token', methods=['POST'])
 def generate_token():
-    global active_manifest, current_telemetry, captured_evidence, last_evidence_meta
+    global active_manifest, current_telemetry, captured_evidence, last_evidence_meta, current_route, is_trace_started
+    
+    current_route = []
+    is_trace_started = False
     data = request.get_json()
 
     generated_id     = f"NODE-HV-{random.randint(1000,9999)}X"
@@ -762,8 +794,8 @@ def generate_token():
 # ==========================================================
 @app.route('/api/selesaikan-pelacakan', methods=['POST'])
 def reset_tracking_node():
-    global active_manifest, current_telemetry, safety_status, captured_evidence, last_evidence_meta
-
+    global active_manifest, current_telemetry, safety_status, captured_evidence, last_evidence_meta, current_route, is_trace_started
+    
     if active_manifest.get("otp_token") is not None:
         history_list = _load_history()
 
@@ -806,6 +838,7 @@ def reset_tracking_node():
             "photo_urls":     saved_photo_urls,  # URL foto yang disimpan permanen
             "evidence_trigger": last_evidence_meta.get("trigger", "-"),
             "evidence_time":    last_evidence_meta.get("time", "-"),
+            "route":            current_route
         })
         _save_history(history_list)
 
@@ -828,6 +861,9 @@ def reset_tracking_node():
         "speed": "0", "lat": None, "lng": None, "last_seen": 0
     }
     safety_status = {"benturan": False, "waktu_kejadian": "-", "pemaksaan_buka": False}
+
+    current_route = []
+    is_trace_started = False
 
     socketio.emit('ui_refresh',     {**current_telemetry, **safety_status})
     socketio.emit('evidence_update', {"photos": [], "trigger": "-", "time": "-", "count": 0})

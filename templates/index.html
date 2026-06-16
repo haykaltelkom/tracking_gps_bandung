@@ -716,6 +716,7 @@ let isServerAdminLogged = "{{ is_admin_logged }}" === "True";
 let generatedOtpCache = "";
 let generatedUserUrl = "";
 let map, trackingMarker = null, radarCircle = null;
+let routePolyline = null;
 let courierOnline = null;
 let lastCourierCoordsCache = null;
 const socket = io();
@@ -952,6 +953,31 @@ socket.on('ui_refresh',(data)=>{
         courierOnline=null;lastCourierCoordsCache=null;return;
     }
     triggerMapMarkerUpdate(data);
+
+    if(data.last_seen === 0){
+        // Sesi baru / alat belum pernah kirim data
+        if(trackingMarker){ map.removeLayer(trackingMarker); trackingMarker=null; }
+        if(radarCircle)   { map.removeLayer(radarCircle);   radarCircle=null;    }
+        if(routePolyline) { map.removeLayer(routePolyline); routePolyline=null;  } // <-- Hapus rute
+        courierOnline=null; lastCourierCoordsCache=null; return;
+    }
+
+    // [BAGIAN TAMBAHAN UNTUK MENGGAMBAR JEJAK / TRACING]
+    if(data.route && Array.isArray(data.route)) {
+        if(!routePolyline) {
+            // Buat garis jejak baru bergaya cyber/dashed orange
+            routePolyline = L.polyline(data.route, {
+                color: '#FF9A4D', 
+                weight: 4, 
+                opacity: 0.85, 
+                dashArray: '8, 8', 
+                lineJoin: 'round'
+            }).addTo(map);
+        } else {
+            // Update titik rute yang sudah ada
+            routePolyline.setLatLngs(data.route);
+        }
+    }
 });
 
 socket.on('evidence_update',(data)=>{

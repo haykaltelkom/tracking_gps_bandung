@@ -719,6 +719,7 @@ header::before{
 <script>
 const socket = io();
 let map, trackingMarker = null, radarCircle = null;
+let routePolyline = null;
 let courierOnline = null;
 let lastCourierCoords = null;
 
@@ -1026,6 +1027,31 @@ socket.on('ui_refresh', function(data){
 
     // Koordinat valid dari GPS asli — tampilkan/update marker
     updateMarker(data);
+
+    if(data.last_seen === 0){
+        // Sesi baru / alat belum pernah kirim data
+        if(trackingMarker){ map.removeLayer(trackingMarker); trackingMarker=null; }
+        if(radarCircle)   { map.removeLayer(radarCircle);   radarCircle=null;    }
+        if(routePolyline) { map.removeLayer(routePolyline); routePolyline=null;  } // <-- Hapus rute
+        courierOnline=null; lastCourierCoordsCache=null; return;
+    }
+
+    // [BAGIAN TAMBAHAN UNTUK MENGGAMBAR JEJAK / TRACING]
+    if(data.route && Array.isArray(data.route)) {
+        if(!routePolyline) {
+            // Buat garis jejak baru bergaya cyber/dashed orange
+            routePolyline = L.polyline(data.route, {
+                color: '#FF9A4D', 
+                weight: 4, 
+                opacity: 0.85, 
+                dashArray: '8, 8', 
+                lineJoin: 'round'
+            }).addTo(map);
+        } else {
+            // Update titik rute yang sudah ada
+            routePolyline.setLatLngs(data.route);
+        }
+    }
 });
 
 // ── Socket: update foto bukti ──
