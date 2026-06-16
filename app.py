@@ -20,7 +20,11 @@ app.config['SESSION_PERMANENT'] = False
 from datetime import timedelta
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode=None)
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode='threading'
+)
 
 # ==========================================================
 # KONFIGURASI HIVEMQ MQTT & FILE HISTORY
@@ -1254,6 +1258,14 @@ def handle_connect():
 # ENTRY POINT
 # ==========================================================
 if __name__ == '__main__':
-    socketio.start_background_task(target=check_device_heartbeat)
+    socketio.start_background_task(check_device_heartbeat)
     start_mqtt_background()
-    socketio.run(app, debug=True, port=5001, use_reloader=False)
+
+    socketio.run(
+        app,
+        host='0.0.0.0',
+        port=5001,
+        debug=True,
+        use_reloader=False,
+        allow_unsafe_werkzeug=True
+    )
