@@ -98,7 +98,7 @@ header::before{
 .main-container{display:flex;flex:1;position:relative;height:calc(100vh - 72px);overflow:hidden;z-index:1;}
 #map{flex:1;height:100%;width:100%;background:#0A0704;}
 
-/* ─── SIDE PANEL — Responsive di semua zoom level ─── */
+/* ─── SIDE PANEL ─── */
 #panel{
     width:400px;
     min-width:300px;
@@ -251,6 +251,11 @@ header::before{
 .alert-danger{background:var(--danger-bg);border-color:rgba(255,90,77,.3);color:#FF8B82;}
 .alert-success{background:var(--success-bg);border-color:rgba(52,211,153,.28);color:var(--success);}
 
+@keyframes alertPulse{
+    0%{box-shadow:0 0 0 0 rgba(255,90,77,.4);border-color:rgba(255,90,77,.3);}
+    100%{box-shadow:0 0 0 8px rgba(255,90,77,0);border-color:rgba(255,90,77,.8);}
+}
+
 /* Photo grid */
 .photo-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:2px;}
 .photo-grid img{width:100%;height:95px;object-fit:cover;border-radius:9px;border:1px solid rgba(255,154,77,.15);box-shadow:0 4px 12px rgba(0,0,0,.5);transition:transform .22s;}
@@ -308,41 +313,17 @@ header::before{
     background:linear-gradient(155deg,rgba(34,24,15,.95),rgba(18,13,8,.97));
     border:1px solid rgba(52,211,153,.35);border-top:1px solid rgba(52,211,153,.6);
     border-radius:22px;padding:44px 36px;text-align:center;
-    box-shadow:
-        0 1px 0 rgba(255,255,255,.06) inset,
-        0 30px 80px rgba(0,0,0,.8),
-        0 0 60px rgba(52,211,153,.08);
+    box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 30px 80px rgba(0,0,0,.8),0 0 60px rgba(52,211,153,.08);
     animation:cardIn .6s cubic-bezier(.34,1.56,.64,1);
 }
 @keyframes cardIn{from{transform:translateY(30px) scale(.95);opacity:0;}to{transform:none;opacity:1;}}
-
-#ended-icon{
-    font-size:56px;margin-bottom:18px;display:block;
-    animation:iconPop .7s cubic-bezier(.34,1.56,.64,1) .15s both;
-}
+#ended-icon{font-size:56px;margin-bottom:18px;display:block;animation:iconPop .7s cubic-bezier(.34,1.56,.64,1) .15s both;}
 @keyframes iconPop{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
-
-#ended-title{
-    font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;
-    color:#fff;margin-bottom:12px;text-shadow:0 0 20px rgba(52,211,153,.25);
-}
-#ended-msg{
-    font-size:14px;color:var(--text-mut);line-height:1.7;margin-bottom:16px;
-}
-#ended-time{
-    display:inline-block;
-    background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);
-    color:var(--success);font-family:'JetBrains Mono',monospace;
-    font-size:12px;font-weight:700;padding:6px 16px;border-radius:20px;
-    margin-bottom:20px;
-}
-#ended-divider{
-    height:1px;background:linear-gradient(90deg,transparent,rgba(255,107,0,.2),transparent);
-    margin:20px 0;
-}
-#ended-sub{
-    font-size:12px;color:var(--text-faint);line-height:1.6;margin-bottom:24px;
-}
+#ended-title{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;color:#fff;margin-bottom:12px;text-shadow:0 0 20px rgba(52,211,153,.25);}
+#ended-msg{font-size:14px;color:var(--text-mut);line-height:1.7;margin-bottom:16px;}
+#ended-time{display:inline-block;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);color:var(--success);font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;padding:6px 16px;border-radius:20px;margin-bottom:20px;}
+#ended-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(255,107,0,.2),transparent);margin:20px 0;}
+#ended-sub{font-size:12px;color:var(--text-faint);line-height:1.6;margin-bottom:24px;}
 #ended-invoice-btn{
     display:inline-flex;align-items:center;gap:8px;
     background:linear-gradient(180deg,#3BD68F,#10B981 55%,#0A9468);
@@ -352,9 +333,7 @@ header::before{
     transition:transform .15s;
 }
 #ended-invoice-btn:hover{transform:translateY(-2px);}
-#ended-footer{
-    margin-top:24px;font-size:10px;color:var(--text-faint);letter-spacing:.5px;
-}
+#ended-footer{margin-top:24px;font-size:10px;color:var(--text-faint);letter-spacing:.5px;}
 
 /* Leaflet popup */
 .leaflet-popup-content-wrapper{background:rgba(20,14,9,.95);color:var(--text);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.6);border:1px solid var(--border);backdrop-filter:blur(10px);}
@@ -408,13 +387,13 @@ header::before{
         <!-- NAVIGASI PETA -->
         <div class="section-title">Navigasi Peta</div>
         <div class="nav-grid">
-            <button class="btn-nav btn-nav-hub" onclick="focusHub()">
+            <button class="btn-nav btn-nav-hub" id="btn-hub" onclick="focusHub()">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                Hub Utama
+                🏠 Hub Utama
             </button>
-            <button class="btn-nav btn-nav-live" onclick="focusCourier()">
+            <button class="btn-nav btn-nav-live" id="btn-kurir" onclick="focusCourier()">
                 <div class="ping-shell"><div class="ping-wave"></div><div class="ping-core"></div></div>
-                Kurir Saya
+                📍 Kurir Saya
             </button>
         </div>
 
@@ -435,24 +414,112 @@ header::before{
         </div>
 
         <!-- KOORDINAT GPS REAL-TIME -->
-        <div class="card">
-            <div class="label">Koordinat GPS Paket</div>
-            <div style="display:flex;flex-direction:column;gap:7px;margin-top:2px;">
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:10px;color:var(--text-faint);font-weight:700;width:26px;flex-shrink:0;">LAT</span>
-                    <span id="ui-coord-lat" style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--orange-lt);letter-spacing:.5px;">—</span>
+        <div class="card" id="card-gps" style="border-color:rgba(255,107,0,.3);">
+            <!-- Header -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div class="label" style="margin:0;">📡 Titik Lokasi GPS</div>
+                <div id="gps-chip-user" style="font-size:9px;font-weight:800;padding:3px 8px;border-radius:12px;
+                     background:rgba(255,90,77,.15);color:var(--danger);border:1px solid rgba(255,90,77,.3);
+                     letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;">
+                    Menunggu Sinyal
                 </div>
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:10px;color:var(--text-faint);font-weight:700;width:26px;flex-shrink:0;">LNG</span>
-                    <span id="ui-coord-lng" style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--orange-lt);letter-spacing:.5px;">—</span>
+            </div>
+
+            <!-- BARIS 1: Hub Utama (tetap) -->
+            <div style="background:rgba(30,41,59,.6);border:1px solid rgba(255,154,77,.15);
+                        border-radius:9px;padding:9px 12px;margin-bottom:8px;">
+                <div style="font-size:9px;color:var(--text-faint);font-weight:800;
+                            text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;
+                            display:flex;align-items:center;gap:5px;">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    Hub Utama — Kantor Pos Pusat Cimahi
                 </div>
-                <div style="margin-top:4px;padding-top:8px;border-top:1px solid rgba(255,107,0,.12);">
-                    <a id="ui-maps-link" href="#" target="_blank" rel="noopener"
-                       style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--success);text-decoration:none;opacity:.4;pointer-events:none;transition:opacity .2s;">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                        Buka di Google Maps
-                    </a>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="background:rgba(255,107,0,.12);border:1px solid rgba(255,107,0,.2);
+                             border-radius:5px;padding:2px 6px;font-size:9px;font-weight:800;
+                             color:var(--orange-lt);width:28px;text-align:center;flex-shrink:0;">LAT</div>
+                        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;
+                              font-weight:700;color:var(--text-mut);">-6.885874°</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="background:rgba(255,107,0,.12);border:1px solid rgba(255,107,0,.2);
+                             border-radius:5px;padding:2px 6px;font-size:9px;font-weight:800;
+                             color:var(--orange-lt);width:28px;text-align:center;flex-shrink:0;">LNG</div>
+                        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;
+                              font-weight:700;color:var(--text-mut);">107.538179°</span>
+                    </div>
                 </div>
+                <a href="https://www.google.com/maps?q=-6.885874,107.538179" target="_blank" rel="noopener"
+                   style="display:inline-flex;align-items:center;gap:4px;margin-top:7px;
+                          font-size:10px;font-weight:700;color:var(--text-faint);text-decoration:none;">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Buka di Google Maps
+                </a>
+            </div>
+
+            <!-- BARIS 2: GPS Real-Time Alat -->
+            <div style="background:rgba(255,107,0,.06);border:1px solid rgba(255,107,0,.2);
+                        border-radius:9px;padding:9px 12px;">
+                <div style="font-size:9px;color:var(--orange-lt);font-weight:800;
+                            text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;
+                            display:flex;align-items:center;gap:5px;">
+                    <div id="gps-live-dot" style="width:7px;height:7px;border-radius:50%;
+                         background:var(--danger);box-shadow:0 0 6px var(--danger);flex-shrink:0;"></div>
+                    GPS Real-Time — Alat Pelacak
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="background:rgba(255,107,0,.12);border:1px solid rgba(255,107,0,.2);
+                             border-radius:5px;padding:2px 6px;font-size:9px;font-weight:800;
+                             color:var(--orange-lt);width:28px;text-align:center;flex-shrink:0;">LAT</div>
+                        <span id="ui-coord-lat" style="font-family:'JetBrains Mono',monospace;
+                              font-size:14px;font-weight:700;color:var(--text-faint);
+                              letter-spacing:.5px;">Menunggu...</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="background:rgba(255,107,0,.12);border:1px solid rgba(255,107,0,.2);
+                             border-radius:5px;padding:2px 6px;font-size:9px;font-weight:800;
+                             color:var(--orange-lt);width:28px;text-align:center;flex-shrink:0;">LNG</div>
+                        <span id="ui-coord-lng" style="font-family:'JetBrains Mono',monospace;
+                              font-size:14px;font-weight:700;color:var(--text-faint);
+                              letter-spacing:.5px;">Menunggu...</span>
+                    </div>
+                </div>
+
+                <!-- Satelit + waktu update -->
+                <div style="display:flex;justify-content:space-between;align-items:center;
+                     margin-top:8px;padding-top:7px;border-top:1px solid rgba(255,107,0,.1);">
+                    <span style="font-size:10px;color:var(--text-faint);">
+                        🛰 <span id="ui-sats" style="color:var(--text-mut);font-family:'JetBrains Mono',monospace;font-weight:700;">—</span>
+                        &nbsp;|&nbsp; HDOP: <span id="ui-hdop" style="color:var(--text-mut);font-family:'JetBrains Mono',monospace;font-weight:700;">—</span>
+                    </span>
+                    <span id="ui-coord-time" style="font-size:10px;color:var(--text-mut);font-family:'JetBrains Mono',monospace;">—</span>
+                </div>
+
+                <!-- Tombol Google Maps real-time -->
+                <a id="ui-maps-link" href="#" target="_blank" rel="noopener"
+                   style="display:flex;align-items:center;justify-content:center;gap:6px;
+                          margin-top:9px;padding:9px;border-radius:8px;
+                          background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.18);
+                          color:var(--success);font-size:11px;font-weight:700;text-decoration:none;
+                          opacity:.3;pointer-events:none;transition:all .3s;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    Buka Lokasi Alat di Google Maps
+                </a>
+
+                <!-- Tombol Fokus Peta -->
+                <button id="btn-focus-map" onclick="focusCourier()"
+                   style="display:none;width:100%;margin-top:6px;padding:8px;border-radius:8px;
+                          background:rgba(255,107,0,.12);border:1px solid rgba(255,107,0,.3);
+                          color:var(--orange-lt);font-size:11px;font-weight:700;cursor:pointer;
+                          text-align:center;transition:all .2s;">
+                    🎯 Fokus Peta ke Lokasi Alat
+                </button>
             </div>
         </div>
 
@@ -530,19 +597,29 @@ header::before{
 
         <!-- KEAMANAN ENCLOSURE -->
         <div class="section-title">Status Keamanan Paket</div>
+
+        <!-- Status Benturan -->
         {% if safety and safety.benturan %}
-        <div class="alert-box alert-danger">
-            <span>⚠️ Terdeteksi Benturan Kritis!</span>
+        <div id="alert-benturan" class="alert-box alert-danger" style="animation:alertPulse 1s ease infinite alternate;">
+            <span style="font-size:13px;">⚠️ Terdeteksi Benturan Kritis!</span>
             <span style="font-size:10px;font-weight:500;margin-top:2px;">Waktu: {{ safety.waktu_kejadian }}</span>
         </div>
         {% else %}
-        <div class="alert-box alert-success"><span>✅ Struktur paket stabil & aman</span></div>
+        <div id="alert-benturan" class="alert-box alert-success">
+            <span>✅ Struktur paket stabil &amp; aman</span>
+        </div>
         {% endif %}
 
+        <!-- Status Pembukaan Paksa -->
         {% if safety and safety.pemaksaan_buka %}
-        <div class="alert-box alert-danger"><span>🚨 Terdeteksi pembukaan paksa!</span></div>
+        <div id="alert-segel" class="alert-box alert-danger" style="animation:alertPulse 1s ease infinite alternate;">
+            <span style="font-size:13px;">🚨 Terdeteksi Pembukaan Paksa!</span>
+            <span style="font-size:10px;font-weight:500;margin-top:2px;">Enclosure dibuka tanpa otorisasi</span>
+        </div>
         {% else %}
-        <div class="alert-box alert-success"><span>✅ Segel enclosure terkunci otentik</span></div>
+        <div id="alert-segel" class="alert-box alert-success">
+            <span>✅ Segel enclosure terkunci otentik</span>
+        </div>
         {% endif %}
 
         <!-- BUKTI VISUAL REAL-TIME -->
@@ -620,9 +697,7 @@ header::before{
     </div><!-- end #panel -->
 </div><!-- end .main-container -->
 
-<!-- ═══════════════════════════════════════════════ -->
-<!-- OVERLAY: PELACAKAN BERAKHIR (muncul otomatis)   -->
-<!-- ═══════════════════════════════════════════════ -->
+<!-- OVERLAY: PELACAKAN BERAKHIR -->
 <div id="ended-overlay" style="display:none;">
     <div id="ended-card">
         <div id="ended-icon">✅</div>
@@ -650,248 +725,109 @@ let lastCourierCoords = null;
 const HUB_COORDS = [-6.885874, 107.538179];
 const LOGO_URL   = "{{ url_for('static', filename='logo_pos.png') }}";
 
-// ─── Clock ───
 setInterval(()=>{
     document.getElementById('digital-clock').innerText = new Date().toTimeString().split(' ')[0];
 }, 1000);
 
-// ─── Toggle panel ───
 function togglePanel(){
     document.getElementById('main-wrap').classList.toggle('panel-closed');
     setTimeout(()=>map.invalidateSize({animate:true}), 400);
 }
 
-// ─── Map init ───
 document.addEventListener('DOMContentLoaded', ()=>{
     map = L.map('map', {zoomControl:false}).setView(HUB_COORDS, 16);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png',
         {attribution:'&copy; OpenStreetMap &copy; CartoDB'}).addTo(map);
     L.control.zoom({position:'bottomleft'}).addTo(map);
 
-    // Hub marker
     const hubIcon = L.divIcon({
-        html:`<div class="hub-marker">
-                <div class="hub-badge"><img src="${LOGO_URL}" alt="Pos"></div>
-                <div class="hub-tip"></div>
-              </div>`,
+        html:`<div class="hub-marker"><div class="hub-badge"><img src="${LOGO_URL}" alt="Pos"></div><div class="hub-tip"></div></div>`,
         className:'cimahi-hub-marker', iconSize:[50,62], iconAnchor:[25,62], popupAnchor:[0,-62]
     });
     L.marker(HUB_COORDS, {icon:hubIcon}).addTo(map).bindPopup(`
         <div style="font-family:'Plus Jakarta Sans',sans-serif;color:#FBF3EA;padding:2px;min-width:190px;">
-            <strong style="color:#FF9A4D;font-size:12px;display:block;margin-bottom:4px;">📦 Kantor Pos Cimahi (Hub)</strong>
-            <p style="font-size:11px;margin:0;color:#B59C86;line-height:1.4;">Jl. Gatot Subroto No.1, Cimahi Tengah</p>
+            <strong style="color:#FF9A4D;font-size:12px;display:block;margin-bottom:4px;">🏠 Kantor Pos Pusat Cimahi</strong>
+            <p style="font-size:11px;margin:0;color:#B59C86;line-height:1.4;">Jl. Gatot Subroto No.1, Baros, Cimahi Selatan</p>
             <span style="display:inline-block;margin-top:5px;padding:2px 7px;background:rgba(52,211,153,.15);color:#34D399;font-size:10px;font-weight:700;border-radius:4px;border:1px solid rgba(52,211,153,.3);">Base Station Aktif</span>
         </div>`);
     setTimeout(()=>map.invalidateSize(), 300);
 });
 
-// ─── Build courier icon ───
 function buildCourierIcon(online){
     const cls   = online ? 'is-online' : 'is-offline';
     const label = online ? 'ONLINE'    : 'OFFLINE';
     return L.divIcon({
-        html:`<div class="courier-iot-icon ${cls}">
-                <div class="courier-pulse"></div>
-                <div class="courier-body-graphic"></div>
-                <div class="courier-status-badge">${label}</div>
-              </div>`,
+        html:`<div class="courier-iot-icon ${cls}"><div class="courier-pulse"></div><div class="courier-body-graphic"></div><div class="courier-status-badge">${label}</div></div>`,
         className:'custom-courier-marker', iconSize:[50,62], iconAnchor:[25,62], popupAnchor:[0,-62]
     });
 }
 
-// ─── Update map marker ───
-function updateMarker(data){
-    const pos    = [data.lat, data.lng];
-    lastCourierCoords = pos;
-    const online = (data.status||'').toUpperCase().includes('ONLINE');
-    const ringColor  = online ? '#FF6B00' : '#6B5544';
-    const statusClr  = online ? '#34D399'  : '#FF5A4D';
-    const statusTxt  = online ? 'ONLINE — GPS Lock' : 'OFFLINE';
+const _v = (v, fb) => (v===undefined||v===null||v==='') ? fb : v;
+let autoFollow = true;  // peta mengikuti posisi alat secara otomatis
 
-    const popup = `
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;color:#FBF3EA;padding:2px;min-width:190px;">
-            <strong style="color:#FF9A4D;font-size:12px;display:block;margin-bottom:5px;">🚴 Kurir Anda (On-Duty)</strong>
-            <span style="display:inline-block;margin-bottom:6px;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:800;
-                background:${online?'rgba(52,211,153,.15)':'rgba(255,90,77,.15)'};color:${statusClr};
-                border:1px solid ${online?'rgba(52,211,153,.35)':'rgba(255,90,77,.35)'};">● ${statusTxt}</span>
-            <table style="font-size:11px;width:100%;color:#B59C86;">
-                <tr><td style="padding:2px 0;">Koordinat:</td><td style="font-family:monospace;color:#FF9A4D;font-weight:700;">[${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}]</td></tr>
-                <tr><td style="padding:2px 0;">Kecepatan:</td><td style="font-weight:700;color:#34D399;">${data.speed} km/jam</td></tr>
-            </table>
-        </div>`;
+function updateMarker(data){
+    const pos     = [data.lat, data.lng];
+    lastCourierCoords = pos;
+    const online  = (data.status||'').toUpperCase().includes('ONLINE');
+    const gpsLock = (data.status||'').includes('GPS LOCK');
+    // Anggap aktif jika ONLINE dengan koordinat valid (termasuk MENCARI SINYAL)
+    const hasGpsData = online && data.lat && data.lng && data.last_seen !== 0;
+    const ringColor = online ? '#FF6B00' : '#6B5544';
+    const statusClr = online ? '#34D399'  : '#FF5A4D';
+    const statusTxt = gpsLock ? 'GPS LOCK' : online ? 'ONLINE' : 'OFFLINE';
+
+    const latStr  = parseFloat(data.lat).toFixed(6);
+    const lngStr  = parseFloat(data.lng).toFixed(6);
+    const mapsUrl = 'https://www.google.com/maps?q=' + latStr + ',' + lngStr;
+
+    const popup =
+        '<div style="font-family:\'Plus Jakarta Sans\',sans-serif;color:#FBF3EA;padding:4px;min-width:210px;">' +
+        '<strong style="color:#FF9A4D;font-size:12px;display:block;margin-bottom:6px;">📍 Alat Pelacak IoT</strong>' +
+        '<span style="display:inline-block;margin-bottom:10px;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:800;background:' + (online?'rgba(52,211,153,.15)':'rgba(255,90,77,.15)') + ';color:' + statusClr + ';border:1px solid ' + (online?'rgba(52,211,153,.35)':'rgba(255,90,77,.35)') + ';">● ' + statusTxt + '</span>' +
+        '<table style="font-size:11px;width:100%;color:#B59C86;margin-bottom:10px;">' +
+        '<tr><td style="padding:3px 0;color:#7E6E5E;">LAT:</td><td style="font-family:monospace;color:#FF9A4D;font-weight:700;text-align:right;">' + latStr + '°</td></tr>' +
+        '<tr><td style="padding:3px 0;color:#7E6E5E;">LNG:</td><td style="font-family:monospace;color:#FF9A4D;font-weight:700;text-align:right;">' + lngStr + '°</td></tr>' +
+        '<tr><td style="padding:3px 0;color:#7E6E5E;">Kecepatan:</td><td style="font-weight:700;color:#34D399;text-align:right;">' + (data.speed||0) + ' km/jam</td></tr>' +
+        '<tr><td style="padding:3px 0;color:#7E6E5E;">Satelit:</td><td style="text-align:right;color:#B59C86;">' + (data.sats||'—') + '</td></tr>' +
+        '</table>' +
+        '<a href="' + mapsUrl + '" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);border-radius:8px;color:#34D399;font-size:11px;font-weight:700;text-decoration:none;">🗺 Buka di Google Maps</a>' +
+        '</div>';
 
     if(!trackingMarker){
+        // Sinyal pertama masuk — buat marker dan langsung fly ke posisi alat
         trackingMarker = L.marker(pos, {icon:buildCourierIcon(online)}).addTo(map).bindPopup(popup).openPopup();
         radarCircle    = L.circle(pos, {radius:120, color:ringColor, weight:1.5, fillColor:ringColor, fillOpacity:.2}).addTo(map);
         courierOnline  = online;
         animateRadar();
-        // Auto-zoom ke kurir saat pertama kali sinyal masuk
-        map.flyTo(pos, 17, {animate:true, duration:1.5});
+        map.flyTo(pos, 18, {animate:true, duration:1.8});
+        autoFollow = true;
+        // Aktifkan visual tombol Kurir Saya
+        var btnK = document.getElementById('btn-kurir');
+        if(btnK){ btnK.style.background='linear-gradient(180deg,#FF8A3D,var(--orange) 60%,#E25E00)'; btnK.style.borderColor='var(--orange-lt)'; }
+        var btnFocus = document.getElementById('btn-focus-map');
+        if(btnFocus) btnFocus.style.display = 'block';
     } else {
+        // Update posisi marker yang sudah ada
         trackingMarker.setLatLng(pos).setPopupContent(popup);
         if(courierOnline !== online){
             trackingMarker.setIcon(buildCourierIcon(online));
             courierOnline = online;
         }
-        if(radarCircle){ radarCircle.setLatLng(pos); radarCircle.setStyle({color:ringColor, fillColor:ringColor}); }
+        if(radarCircle){
+            radarCircle.setLatLng(pos);
+            radarCircle.setStyle({color:ringColor, fillColor:ringColor});
+        }
+        // Auto-follow: pan ke posisi terbaru kalau ONLINE (GPS lock ATAU mencari)
+        // — tidak perlu GPS lock penuh, cukup alat aktif dan koordinat valid
+        if(autoFollow && hasGpsData && map){
+            map.panTo(pos, {animate:true, duration:0.8, easeLinearity:0.5});
+        }
     }
 }
 
-// ─── Socket events ───
-const _v = (v, fb) => (v===undefined||v===null||v==='') ? fb : v;
-
-socket.on('ui_refresh', data=>{
-    const status = _v(data.status, 'Menunggu sinyal…');
-    document.getElementById('ui-id').innerText     = _v(data.device_id, '—');
-    document.getElementById('ui-status').innerText = status;
-    document.getElementById('ui-speed').innerText  = _v(data.speed, '0');
-    // Warna status: ONLINE=hijau, DEEP SLEEP=biru, OFFLINE=merah
-    let statusColor = '#FF5A4D';  // default merah
-    if(status.includes('ONLINE'))          statusColor = '#34D399';  // hijau
-    else if(status.includes('DEEP SLEEP')) statusColor = '#3B82F6';  // biru
-    else if(status.includes('MENCARI'))    statusColor = '#F59E0B';  // kuning
-    document.getElementById('ui-status').style.color = statusColor;
-
-    // Update koordinat GPS real-time
-    const latEl  = document.getElementById('ui-coord-lat');
-    const lngEl  = document.getElementById('ui-coord-lng');
-    const mapsEl = document.getElementById('ui-maps-link');
-
-    if(data.lat && data.lng && data.last_seen !== 0){
-        const latStr = parseFloat(data.lat).toFixed(6);
-        const lngStr = parseFloat(data.lng).toFixed(6);
-        if(latEl)  latEl.innerText  = latStr + '°';
-        if(lngEl)  lngEl.innerText  = lngStr + '°';
-        if(mapsEl){
-            mapsEl.href = `https://www.google.com/maps?q=${latStr},${lngStr}`;
-            mapsEl.style.opacity      = '1';
-            mapsEl.style.pointerEvents = 'auto';
-        }
-    } else {
-        if(latEl)  latEl.innerText  = '—';
-        if(lngEl)  lngEl.innerText  = '—';
-        if(mapsEl){
-            mapsEl.href = '#';
-            mapsEl.style.opacity      = '0.4';
-            mapsEl.style.pointerEvents = 'none';
-        }
-    }
-
-    // ── Update data sensor IoT ──
-    const battEl   = document.getElementById('ui-battery');
-    const battFill = document.getElementById('ui-battery-fill');
-    const tempEl   = document.getElementById('ui-temp');
-    const rollEl   = document.getElementById('ui-roll');
-    const pitchEl  = document.getElementById('ui-pitch');
-    const shockEl  = document.getElementById('ui-shock');
-    const satsEl   = document.getElementById('ui-sats');
-
-    if(data.battery !== undefined && data.battery !== '-'){
-        const bpct = parseInt(data.battery) || 0;
-        if(battEl)   battEl.innerText = bpct;
-        if(battFill){
-            battFill.style.width = bpct + '%';
-            battFill.style.background = bpct > 50 ? 'var(--success)' : bpct > 20 ? '#F59E0B' : 'var(--danger)';
-        }
-    }
-    if(data.temp_c !== undefined && tempEl)
-        tempEl.innerText = typeof data.temp_c === 'number' ? data.temp_c.toFixed(1) : data.temp_c;
-    if(data.tilt_roll !== undefined && rollEl)
-        rollEl.innerText = typeof data.tilt_roll === 'number' ? data.tilt_roll.toFixed(1) : data.tilt_roll;
-    if(data.tilt_pitch !== undefined && pitchEl)
-        pitchEl.innerText = typeof data.tilt_pitch === 'number' ? data.tilt_pitch.toFixed(1) : data.tilt_pitch;
-    if(data.shock !== undefined && shockEl){
-        const shockOk = (!data.shock || data.shock === 'NONE' || data.shock === '-');
-        shockEl.innerText = shockOk ? '✔ NONE' : '⚠ ' + data.shock;
-        shockEl.style.color = shockOk ? 'var(--success)' : 'var(--danger)';
-    }
-    if(data.sats !== undefined && satsEl)
-        satsEl.innerText = data.sats !== 'N/A' ? data.sats + ' satelit' : 'Mencari...';
-
-    if(data.last_seen === 0){
-        if(trackingMarker){ map.removeLayer(trackingMarker); trackingMarker=null; }
-        if(radarCircle)   { map.removeLayer(radarCircle);   radarCircle=null;    }
-        courierOnline=null; lastCourierCoords=null; return;
-    }
-    updateMarker(data);
-});
-
-socket.on('evidence_update', data=>{
-    const photos  = data.photos || [];
-    const cb      = Date.now();
-    const grid    = document.getElementById('evidence-grid');
-    const empty   = document.getElementById('evidence-empty');
-    const banner  = document.getElementById('evidence-banner');
-    const latest  = document.getElementById('evidence-latest');
-    const mainImg = document.getElementById('evidence-main-img');
-    const mainTime= document.getElementById('evidence-main-time');
-
-    if(photos.length > 0){
-        // Update foto utama (terbaru)
-        if(mainImg){
-            mainImg.src   = photos[photos.length - 1] + '?t=' + cb;
-            mainImg.style.display = 'block';
-        }
-        if(mainTime) mainTime.innerText = data.time || '—';
-        if(latest)   latest.style.display = 'block';
-
-        // Update grid semua foto (thumbnail)
-        if(grid){
-            grid.style.display = 'grid';
-            grid.innerHTML = photos.map((p,i)=>
-                `<img src="${p}?t=${cb}" alt="Bukti ${i+1}"
-                      onclick="showFullscreen('${p}?t=${cb}')"
-                      style="cursor:zoom-in;">`
-            ).join('');
-        }
-
-        // Banner info
-        if(banner){
-            banner.style.display = 'flex';
-            banner.innerHTML = `
-                <span>📸 ${data.count||photos.length} foto kondisi paket terdokumentasi</span>
-                <span style="font-size:10px;font-weight:500;">
-                    Pemicu: <b>${data.trigger||'Kamera'}</b> • ${data.time||'-'}
-                </span>`;
-        }
-
-        if(empty) empty.style.display = 'none';
-
-        // Notifikasi flash pada foto baru
-        if(mainImg){
-            mainImg.style.outline = '3px solid var(--orange)';
-            setTimeout(()=>{ mainImg.style.outline = 'none'; }, 1500);
-        }
-
-    } else {
-        // Reset ke state kosong
-        if(latest)   latest.style.display = 'none';
-        if(grid)   { grid.style.display = 'none'; grid.innerHTML = ''; }
-        if(banner)   banner.style.display = 'none';
-        if(empty)    empty.style.display = 'flex';
-    }
-});
-
-// ── Fullscreen foto ──
-function showFullscreen(src){
-    const overlay = document.getElementById('fullscreen-overlay');
-    const img     = document.getElementById('fullscreen-img');
-    if(overlay && img){
-        img.src = src;
-        overlay.style.display = 'flex';
-    }
-}
-function closeFullscreen(){
-    const overlay = document.getElementById('fullscreen-overlay');
-    if(overlay) overlay.style.display = 'none';
-}
-// Tutup fullscreen dengan tombol ESC
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeFullscreen(); });
-
-// ─── Radar animation ───
 function animateRadar(){
-    let r=100, op=.25;
-    const id = setInterval(()=>{
+    var r=100, op=.25;
+    var id = setInterval(function(){
         if(radarCircle && map && map.hasLayer(radarCircle)){
             r+=20; op-=.015;
             if(r>450){ r=100; op=.25; }
@@ -901,41 +837,258 @@ function animateRadar(){
     }, 60);
 }
 
-// ─── Nav buttons ───
-function focusHub(){ map && map.flyTo(HUB_COORDS, 17, {animate:true, duration:1.2}); }
+// Hub Utama: fokus ke Kantor Pos Pusat Cimahi
+function focusHub(){
+    autoFollow = false;
+    map && map.flyTo(HUB_COORDS, 17, {animate:true, duration:1.2});
+    var btnK = document.getElementById('btn-kurir');
+    var btnH = document.getElementById('btn-hub');
+    if(btnK){ btnK.style.background='linear-gradient(180deg,rgba(255,107,0,.14),rgba(18,13,8,.8))'; btnK.style.borderColor='var(--border)'; }
+    if(btnH) btnH.style.borderColor = 'var(--orange)';
+}
+
+// Kurir Saya: fokus ke titik lokasi alat pelacak real-time
 function focusCourier(){
     if(map && lastCourierCoords){
-        map.flyTo(lastCourierCoords, 17, {animate:true, duration:1.2});
+        autoFollow = true;
+        map.flyTo(lastCourierCoords, 18, {animate:true, duration:1.4});
         if(trackingMarker) trackingMarker.openPopup();
+        var btnK = document.getElementById('btn-kurir');
+        var btnH = document.getElementById('btn-hub');
+        if(btnK){ btnK.style.background='linear-gradient(180deg,#FF8A3D,var(--orange) 60%,#E25E00)'; btnK.style.borderColor='var(--orange-lt)'; }
+        if(btnH) btnH.style.borderColor = 'rgba(255,154,77,.22)';
     } else {
-        alert('Sinyal kurir belum aktif. Tunggu sebentar ya!');
+        alert('Sinyal GPS belum aktif. Tunggu data dari alat pelacak masuk.');
     }
 }
 
-// ─── Tracking ended by admin (auto overlay) ───
+// ── Socket: update dashboard real-time ──
+socket.on('ui_refresh', function(data){
+    var status = _v(data.status, 'Menunggu sinyal...');
+    document.getElementById('ui-id').innerText     = _v(data.device_id, '—');
+    document.getElementById('ui-status').innerText = status;
+    document.getElementById('ui-speed').innerText  = _v(data.speed, '0');
+
+    // Warna status koneksi
+    var statusColor = '#FF5A4D';
+    if(status.includes('GPS LOCK'))        statusColor = '#34D399';
+    else if(status.includes('ONLINE'))     statusColor = '#34D399';
+    else if(status.includes('MENCARI'))    statusColor = '#F59E0B';
+    else if(status.includes('DEEP SLEEP')) statusColor = '#3B82F6';
+    document.getElementById('ui-status').style.color = statusColor;
+
+    // ── Kartu GPS: koordinat, chip, satelit, HDOP ──
+    var latEl  = document.getElementById('ui-coord-lat');
+    var lngEl  = document.getElementById('ui-coord-lng');
+    var mapsEl = document.getElementById('ui-maps-link');
+    var chipEl = document.getElementById('gps-chip-user');
+    var satsEl = document.getElementById('ui-sats');
+    var hdopEl = document.getElementById('ui-hdop');
+    var timeEl = document.getElementById('ui-coord-time');
+
+    // fix_valid dari server (sudah validasi range koordinat Indonesia)
+    var gpsFixed  = data.fix_valid === true;
+    var hasAnyGps = data.lat && data.lng && data.last_seen !== 0;
+    var isDefault = (Math.abs((data.lat||0) - (-6.885874)) < 0.0001 &&
+                     Math.abs((data.lng||0) - 107.538179) < 0.0001);
+    var hasRealGps = hasAnyGps && !isDefault;
+
+    if(hasAnyGps){
+        var latVal = parseFloat(data.lat).toFixed(6);
+        var lngVal = parseFloat(data.lng).toFixed(6);
+        var coordColor = (gpsFixed && hasRealGps) ? 'var(--orange-lt)' : '#F59E0B';
+
+        if(latEl){ latEl.innerText = latVal + '°'; latEl.style.color = coordColor; }
+        if(lngEl){ lngEl.innerText = lngVal + '°'; lngEl.style.color = coordColor; }
+
+        // Dot GPS live — hijau saat lock, kuning saat mencari, merah saat offline
+        var liveDot = document.getElementById('gps-live-dot');
+        if(liveDot){
+            var dotColor = (gpsFixed && hasRealGps) ? '#34D399' : '#F59E0B';
+            liveDot.style.background = dotColor;
+            liveDot.style.boxShadow  = '0 0 6px ' + dotColor;
+        }
+
+        if(mapsEl){
+            mapsEl.href = 'https://www.google.com/maps?q=' + latVal + ',' + lngVal;
+            mapsEl.style.opacity = '1';
+            mapsEl.style.pointerEvents = 'auto';
+        }
+        if(timeEl) timeEl.innerText = new Date().toTimeString().split(' ')[0];
+
+        if(chipEl){
+            var chipTxt, chipBg, chipClr, chipBdr;
+            if(gpsFixed && hasRealGps){
+                chipTxt='GPS LOCK \u2713'; chipBg='rgba(52,211,153,.15)'; chipClr='#34D399'; chipBdr='rgba(52,211,153,.3)';
+            } else if(status.includes('DEEP SLEEP')){
+                chipTxt='Koordinat Terakhir \uD83D\uDCA4'; chipBg='rgba(59,130,246,.15)'; chipClr='#3B82F6'; chipBdr='rgba(59,130,246,.3)';
+            } else {
+                chipTxt='Mencari Sinyal...'; chipBg='rgba(245,158,11,.15)'; chipClr='#F59E0B'; chipBdr='rgba(245,158,11,.3)';
+            }
+            chipEl.innerText=chipTxt; chipEl.style.background=chipBg; chipEl.style.color=chipClr; chipEl.style.borderColor=chipBdr;
+        }
+    } else {
+        if(latEl){ latEl.innerText='Menunggu...'; latEl.style.color='var(--text-faint)'; }
+        if(lngEl){ lngEl.innerText='Menunggu...'; lngEl.style.color='var(--text-faint)'; }
+        if(mapsEl){ mapsEl.href='#'; mapsEl.style.opacity='0.3'; mapsEl.style.pointerEvents='none'; }
+        if(chipEl){ chipEl.innerText='Menunggu Sinyal'; chipEl.style.background='rgba(255,90,77,.15)'; chipEl.style.color='#FF5A4D'; chipEl.style.borderColor='rgba(255,90,77,.3)'; }
+    }
+
+    // Satelit
+    if(satsEl) satsEl.innerText = (data.sats && data.sats !== 'N/A') ? data.sats : '—';
+
+    // HDOP — warna hijau < 2, kuning 2-5, merah > 5
+    if(hdopEl){
+        if(data.hdop && data.hdop !== 'N/A'){
+            var h = parseFloat(data.hdop);
+            hdopEl.innerText = h.toFixed(1);
+            hdopEl.style.color = h < 2 ? '#34D399' : h < 5 ? '#F59E0B' : '#FF5A4D';
+        } else { hdopEl.innerText = '—'; hdopEl.style.color = 'var(--text-mut)'; }
+    }
+
+    // ── Sensor IoT ──
+    var battEl   = document.getElementById('ui-battery');
+    var battFill = document.getElementById('ui-battery-fill');
+    var tempEl   = document.getElementById('ui-temp');
+    var rollEl   = document.getElementById('ui-roll');
+    var pitchEl  = document.getElementById('ui-pitch');
+    var shockEl  = document.getElementById('ui-shock');
+
+    if(data.battery !== undefined && data.battery !== '-'){
+        var bpct = parseInt(data.battery) || 0;
+        if(battEl)   battEl.innerText = bpct;
+        if(battFill){ battFill.style.width = bpct + '%'; battFill.style.background = bpct > 50 ? 'var(--success)' : bpct > 20 ? '#F59E0B' : 'var(--danger)'; }
+    }
+    if(data.temp_c !== undefined && tempEl)
+        tempEl.innerText = typeof data.temp_c === 'number' ? data.temp_c.toFixed(1) : data.temp_c;
+    if(data.tilt_roll !== undefined && rollEl)
+        rollEl.innerText = typeof data.tilt_roll === 'number' ? data.tilt_roll.toFixed(1) : data.tilt_roll;
+    if(data.tilt_pitch !== undefined && pitchEl)
+        pitchEl.innerText = typeof data.tilt_pitch === 'number' ? data.tilt_pitch.toFixed(1) : data.tilt_pitch;
+    if(data.shock !== undefined && shockEl){
+        var shockOk = (!data.shock || data.shock === 'NONE' || data.shock === '-');
+        shockEl.innerText = shockOk ? '\u2714 NONE' : '\u26A0 ' + data.shock;
+        shockEl.style.color = shockOk ? 'var(--success)' : 'var(--danger)';
+    }
+
+    // ── Update status keamanan real-time ──
+    var alertBenturan = document.getElementById('alert-benturan');
+    var alertSegel    = document.getElementById('alert-segel');
+
+    if(data.benturan){
+        if(alertBenturan){
+            alertBenturan.className = 'alert-box alert-danger';
+            alertBenturan.style.animation = 'alertPulse 1s ease infinite alternate';
+            alertBenturan.innerHTML =
+                '<span style="font-size:13px;">\u26A0\uFE0F Terdeteksi Benturan Kritis!</span>' +
+                '<span style="font-size:10px;font-weight:500;margin-top:2px;">Waktu: ' +
+                (data.waktu_kejadian || '-') + '</span>';
+        }
+    } else {
+        if(alertBenturan && !alertBenturan.classList.contains('alert-danger')){
+            // Jangan reset kalau sudah merah (tetap tampilkan peringatan)
+        }
+    }
+
+    if(data.pemaksaan_buka){
+        if(alertSegel){
+            alertSegel.className = 'alert-box alert-danger';
+            alertSegel.style.animation = 'alertPulse 1s ease infinite alternate';
+            alertSegel.innerHTML =
+                '<span style="font-size:13px;">\uD83D\uDEA8 Terdeteksi Pembukaan Paksa!</span>' +
+                '<span style="font-size:10px;font-weight:500;margin-top:2px;">Enclosure dibuka tanpa otorisasi</span>';
+        }
+    }
+
+    if(data.last_seen === 0){
+        // Sesi baru / alat belum pernah kirim data
+        if(trackingMarker){ map.removeLayer(trackingMarker); trackingMarker=null; }
+        if(radarCircle)   { map.removeLayer(radarCircle);   radarCircle=null;    }
+        courierOnline=null; lastCourierCoords=null; return;
+    }
+
+    // Jangan tampilkan marker kalau:
+    // 1. Koordinat null (GPS belum fix sama sekali)
+    // 2. Koordinat sama persis dengan Hub Utama (koordinat default lama)
+    var hasCoords = (data.lat !== null && data.lat !== undefined &&
+                     data.lng !== null && data.lng !== undefined);
+    var isHubDefault = hasCoords &&
+                       (Math.abs((data.lat||0) - (-6.885874)) < 0.0001 &&
+                        Math.abs((data.lng||0) - 107.538179) < 0.0001);
+
+    if(!hasCoords || isHubDefault){
+        // GPS belum fix — hapus marker lama kalau ada
+        if(trackingMarker){ map.removeLayer(trackingMarker); trackingMarker=null; }
+        if(radarCircle)   { map.removeLayer(radarCircle);   radarCircle=null;    }
+        lastCourierCoords = null;
+        return;
+    }
+
+    // Koordinat valid dari GPS asli — tampilkan/update marker
+    updateMarker(data);
+});
+
+// ── Socket: update foto bukti ──
+socket.on('evidence_update', function(data){
+    var photos  = data.photos || [];
+    var cb      = Date.now();
+    var grid    = document.getElementById('evidence-grid');
+    var empty   = document.getElementById('evidence-empty');
+    var banner  = document.getElementById('evidence-banner');
+    var latest  = document.getElementById('evidence-latest');
+    var mainImg = document.getElementById('evidence-main-img');
+    var mainTime= document.getElementById('evidence-main-time');
+
+    if(photos.length > 0){
+        if(mainImg){ mainImg.src=photos[photos.length-1]+'?t='+cb; mainImg.style.display='block'; }
+        if(mainTime) mainTime.innerText = data.time || '—';
+        if(latest)   latest.style.display = 'block';
+        if(grid){
+            grid.style.display = 'grid';
+            grid.innerHTML = photos.map(function(p,i){
+                return '<img src="'+p+'?t='+cb+'" alt="Bukti '+(i+1)+'" onclick="showFullscreen(\''+p+'?t='+cb+'\')" style="cursor:zoom-in;">';
+            }).join('');
+        }
+        if(banner){
+            banner.style.display = 'flex';
+            banner.innerHTML = '<span>\uD83D\uDCF8 '+(data.count||photos.length)+' foto kondisi paket terdokumentasi</span>'
+                + '<span style="font-size:10px;font-weight:500;">Pemicu: <b>'+(data.trigger||'Kamera')+'</b> \u2022 '+(data.time||'-')+'</span>';
+        }
+        if(empty) empty.style.display = 'none';
+        if(mainImg){ mainImg.style.outline='3px solid var(--orange)'; setTimeout(function(){ mainImg.style.outline='none'; }, 1500); }
+    } else {
+        if(latest)   latest.style.display = 'none';
+        if(grid)   { grid.style.display = 'none'; grid.innerHTML = ''; }
+        if(banner)   banner.style.display = 'none';
+        if(empty)    empty.style.display = 'flex';
+    }
+});
+
+// ── Fullscreen foto ──
+function showFullscreen(src){
+    var overlay = document.getElementById('fullscreen-overlay');
+    var img     = document.getElementById('fullscreen-img');
+    if(overlay && img){ img.src = src; overlay.style.display = 'flex'; }
+}
+function closeFullscreen(){
+    var overlay = document.getElementById('fullscreen-overlay');
+    if(overlay) overlay.style.display = 'none';
+}
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeFullscreen(); });
+
 socket.on('tracking_ended', data => {
     const overlay    = document.getElementById('ended-overlay');
     const timeEl     = document.getElementById('ended-time');
     const invoiceBtn = document.getElementById('ended-invoice-btn');
-
     if(timeEl) timeEl.innerText = '📅 Selesai: ' + (data.ended_at || '-');
-
-    // Arahkan tombol unduh laporan ke arsip history menggunakan device_id
-    if(invoiceBtn && data.device_id) {
-        invoiceBtn.href = '/download-invoice/' + data.device_id;
-    }
-
+    if(invoiceBtn && data.device_id) invoiceBtn.href = '/download-invoice/' + data.device_id;
     if(overlay) overlay.style.display = 'flex';
-
-    // Hapus session user di background
     fetch('/api/user-logout', {method:'POST'}).catch(()=>{});
 });
 
-// ─── End tracking ───
 async function endTracking(){
     if(confirm('Akhiri sesi pelacakan paket ini?')){
         await fetch('/api/user-logout', {method:'POST'});
-        // Ambil token dari URL: /track/<token> -> kembali ke /track/<token>/verify
         const pathParts = window.location.pathname.split('/');
         const token = pathParts[2] || '';
         window.location.href = token ? '/track/' + token + '/verify' : '/';

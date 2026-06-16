@@ -56,8 +56,8 @@ current_telemetry = {
     "device_id": "NODE-HV-PENDING",
     "status": "OFFLINE (MENUNGGU ALAT)",
     "speed": "0",
-    "lat": -6.885874,
-    "lng": 107.538179,
+    "lat": None,   # Tidak ada koordinat default — harus dari GPS asli
+    "lng": None,
     "last_seen": 0
 }
 
@@ -199,53 +199,111 @@ def on_message(client, userdata, msg):
             return
 
         data = json.loads(msg.payload.decode('utf-8'))
-        print(f"📥 Telemetri MQTT [{msg.topic}]: event={data.get('event_type','?')} seq={data.get('seq_id','?')}")
+        print(f"📥 Telemetri MQTT [{msg.topic}]")
+        print(f"   RAW JSON: {json.dumps(data)[:500]}")  # Print payload lengkap
 
-        # ── Parse GPS dari format alat IoT ──
-        gps   = data.get("gps", {})
-        imu   = data.get("imu", {})
-        env   = data.get("environment", {})
-        cam   = data.get("camera", {})
+        # ── Parse GPS dari format alat IoT (SIM7080G / GNSS eksternal) ──
+        #
+        # Mendukung DUA format JSON yang mungkin dikirim firmware:
+        #
+        # Format A (nested):           Format B (flat dari gnss_fix_t):
+        # {                            {
+        #   "gps": {                     "lat": -6.912345,
+        #     "lat": -6.912345,          "lng": 107.612345,
+        #     "lng": 107.612345,         "latitude": -6.912345,
+        #     "speed_kmh": 12.5,         "longitude": 107.612345,
+        #     "fix_valid": true,         "speed_kmh": 12.5,
+        #     "satellites": 8            "fix_valid": true,
+        #   }                            "satellites_used": 8
+        # }                            }
+        #
+        # SIM7080G via AT+CGNSINF → parse_cgnsinf() → gnss_fix_t
+        # Field gnss_fix_t: latitude, longitude, speed_kmh, fix_valid,
+        #                   satellites_used, satellites_view, hdop
 
-        # GPS — bisa "N/A" kalau fix belum dapat
-        raw_lat = gps.get("lat", "N/A")
-        raw_lng = gps.get("lng", "N/A")
-        raw_spd = gps.get("speed_kmh", "N/A")
-        gps_fix = gps.get("fix_valid", False)
+        gps = data.get("gps", {})
+        imu = data.get("imu", {})
+        env = data.get("environment", {})
+        cam = data.get("camera", {})
 
-        try:    lat_val = float(raw_lat)
-        except: lat_val = current_telemetry.get("lat", -6.885874)
+        # ── Parse GPS — logika bersih seperti kode yang terbukti bekerja ──
+        # Ambil raw_lat dan raw_lng dari nested gps{} dulu, lalu root
+        raw_lat = gps.get("lat") or gps.get("latitude") or \
+                  data.get("lat") or data.get("latitude") or \
+                  data.get("gps_latitude")
+        raw_lng = gps.get("lng") or gps.get("longitude") or \
+                  data.get("lng") or data.get("longitude") or \
+                  data.get("gps_longitude")
+        raw_spd = gps.get("speed_kmh") or gps.get("speed") or \
+                  data.get("speed_kmh") or data.get("gps_speed_kmh") or 0
+        raw_sat = gps.get("satellites") or gps.get("satellites_used") or \
+                  data.get("satellites") or data.get("gps_satellites")
+        raw_hdop = gps.get("hdop") or data.get("hdop")
 
-        try:    lng_val = float(raw_lng)
-        except: lng_val = current_telemetry.get("lng", 107.538179)
+        # ── Validasi koordinat — persis seperti kode lama yang berhasil ──
+        # Tidak ada fallback ke koordinat hub — kalau GPS belum fix, kirim None
+        if raw_lat is not None and raw_lng is not None and \
+           raw_lat != "N/A" and raw_lng != "N/A":
+            try:
+                lat_val = float(raw_lat)
+                lng_val = float(raw_lng)
+                gps_fix = True
+                status_str = "🟢 ONLINE (GPS LOCK)"
+            except (TypeError, ValueError):
+                lat_val = None
+                lng_val = None
+                gps_fix = False
+                status_str = "🟡 ONLINE (GPS MENCARI SINYAL)"
+        else:
+            lat_val = None
+            lng_val = None
+            gps_fix = False
+            status_str = "🟡 ONLINE (GPS MENCARI SINYAL)"
 
-        try:    spd_val = str(int(float(raw_spd)))
+        # Kalau GPS belum fix tapi sudah pernah dapat koordinat valid,
+        # gunakan koordinat terakhir (untuk tampilan "Koordinat Terakhir")
+        if lat_val is None:
+            prev = current_telemetry.get("lat")
+            if prev is not None:
+                lat_val = prev
+                lng_val = current_telemetry.get("lng")
+                print(f"   GPS: pakai koordinat terakhir ({lat_val}, {lng_val})")
+
+        try:    spd_val = str(round(float(raw_spd), 1))
         except: spd_val = "0"
 
-        # Status berdasarkan GPS fix
-        if gps_fix:
-            status_str = "🟢 ONLINE (GPS LOCK)"
-        else:
-            status_str = "🟡 ONLINE (GPS MENCARI SINYAL)"
+        try:    sat_val = str(int(float(raw_sat)))
+        except: sat_val = "N/A"
+
+        print(f"   GPS → lat={lat_val} lng={lng_val} fix={gps_fix} sat={sat_val}")
 
         # Update device_id dari alat langsung
         real_device_id = data.get("device_id", active_manifest["device_id"])
 
+        # Update koordinat di current_telemetry
+        # TIDAK pernah simpan koordinat default hub (-6.885874, 107.538179)
+        # sebagai koordinat alat — hanya koordinat dari GPS asli
+        if lat_val is not None:
+            current_telemetry["lat"] = lat_val
+            current_telemetry["lng"] = lng_val
+
         current_telemetry.update({
-            "device_id": real_device_id,
-            "status":    status_str,
-            "_base_status": status_str,  # Status dasar saat alat aktif (untuk heartbeat)
-            "speed":     spd_val,
-            "lat":       lat_val,
-            "lng":       lng_val,
-            "last_seen": time.time(),
-            # Data tambahan dari IMU & environment
-            "battery":   env.get("battery_pct", "-"),
-            "temp_c":    imu.get("temp_c", "-"),
-            "shock":     imu.get("shock_str", "NONE"),
-            "tilt_roll": round(imu.get("tilt", {}).get("roll_deg", 0), 1),
-            "tilt_pitch":round(imu.get("tilt", {}).get("pitch_deg", 0), 1),
-            "sats":      gps.get("satellites", "N/A"),
+            "device_id":    real_device_id,
+            "status":       status_str,
+            "_base_status": status_str,
+            "speed":        spd_val,
+            "last_seen":    time.time(),
+            "battery":      env.get("battery_pct", data.get("battery_pct",
+                            imu.get("battery_pct", "-"))),
+            "temp_c":       imu.get("temp_c", data.get("temp_c", "-")),
+            "shock":        imu.get("shock_str", data.get("shock_str", "NONE")),
+            "tilt_roll":    round(float(imu.get("tilt", {}).get("roll_deg",
+                            data.get("tilt_roll", 0)) or 0), 1),
+            "tilt_pitch":   round(float(imu.get("tilt", {}).get("pitch_deg",
+                            data.get("tilt_pitch", 0)) or 0), 1),
+            "sats":         sat_val,
+            "hdop":         raw_hdop,
+            "fix_valid":    gps_fix,
         })
 
         # ── Event type → safety status ──
@@ -253,10 +311,27 @@ def on_message(client, userdata, msg):
         shock_str  = imu.get("shock_str", "NONE")
 
         # Semua event type yang dikenal
-        TAMPER_EVENTS = ("TAMPER_WITH_IMAGE", "TAMPER", "SHOCK_DETECTED",
-                         "TAMPER_DEVICE_REMOVED", "TAMPER_DETECTED")
-        OPEN_EVENTS   = ("TAMPER_WITH_IMAGE", "TAMPER", "OPEN_DETECTED",
-                         "TAMPER_DEVICE_REMOVED")
+        # Event type dari smart_tracker.c:
+        #   EVT_BOOT_REPORT        → "BOOT_REPORT"
+        #   EVT_ROUTINE_UPDATE     → "ROUTINE_UPDATE"
+        #   EVT_SHOCK_WARNING      → "SHOCK_WARNING" / "SHOCK_DETECTED"
+        #   EVT_TAMPER_PKG_OPENED  → "TAMPER_PKG_OPENED" (LDR kena cahaya = kotak dibuka)
+        #   EVT_TAMPER_PKG_BROKEN  → "TAMPER_PKG_BROKEN" (shock + LDR)
+        #   EVT_TAMPER_REMOVED     → "TAMPER_REMOVED" (limit switch terbuka = alat dicabut)
+        #   EVT_TAMPER_WITH_IMAGE  → "TAMPER_WITH_IMAGE" (ada foto bukti)
+        TAMPER_EVENTS = (
+            "TAMPER_WITH_IMAGE", "TAMPER", "SHOCK_DETECTED",
+            "SHOCK_WARNING",                    # EVT_SHOCK_WARNING
+            "TAMPER_DEVICE_REMOVED", "TAMPER_DETECTED",
+            "TAMPER_PKG_BROKEN",                # EVT_TAMPER_PKG_BROKEN
+        )
+        OPEN_EVENTS = (
+            "TAMPER_WITH_IMAGE", "TAMPER", "OPEN_DETECTED",
+            "TAMPER_DEVICE_REMOVED",
+            "TAMPER_REMOVED",                   # EVT_TAMPER_REMOVED (limit switch)
+            "TAMPER_PKG_OPENED",                # EVT_TAMPER_PKG_OPENED (LDR = kotak dibuka)
+            "TAMPER_PKG_BROKEN",                # EVT_TAMPER_PKG_BROKEN (rusak paksa)
+        )
 
         if event_type in TAMPER_EVENTS or shock_str not in ("NONE", "-", ""):
             safety_status["benturan"] = True
@@ -269,7 +344,7 @@ def on_message(client, userdata, msg):
         # Selalu emit ke semua client — update dashboard
         payload_emit = {**current_telemetry, **safety_status}
         socketio.emit('ui_refresh', payload_emit)
-        print(f"📡 Emit ui_refresh → lat={lat_val} lng={lng_val} status={status_str}")
+        print(f"📡 Emit → lat={lat_val} lng={lng_val} fix={gps_fix} status={status_str}")
 
         # ── Proses gambar dari payload kamera ──
         _process_camera_payload(cam, event_type, data.get("device_id", "-"))
@@ -746,7 +821,7 @@ def reset_tracking_node():
     }
     current_telemetry = {
         "device_id": "NODE-HV-PENDING", "status": "OFFLINE (MENUNGGU ALAT)",
-        "speed": "0", "lat": -6.885874, "lng": 107.538179, "last_seen": 0
+        "speed": "0", "lat": None, "lng": None, "last_seen": 0
     }
     safety_status = {"benturan": False, "waktu_kejadian": "-", "pemaksaan_buka": False}
 
